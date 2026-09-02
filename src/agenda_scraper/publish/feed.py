@@ -31,7 +31,6 @@ SOURCE_RANK = (
     "muziekgieterij",
     "013",
     "spot",
-    "spot",
     "victorie",
     "gebrdenobel",
     "gigant",
