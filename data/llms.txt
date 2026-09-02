@@ -1,7 +1,7 @@
 # agenda.jurrejan.com — Dutch venue agenda feed
 
 Concerts, club nights and festivals across the Netherlands, scraped four times
-a day from two nationwide aggregators plus a handful of venues, merged into one
+a day from three nationwide aggregators plus two dozen venues, merged into one
 sorted list and published as static files. No API key, no rate limit, no
 pagination. Pick the narrowest route below and read the whole file.
 
@@ -20,10 +20,16 @@ the slug you want.
   /city/<slug>/week.json        one city, next 7 days (cities with 20+ events)
   /source/<name>.json           one scraper, e.g. /source/festivalinfo.json
   /venue/<slug>.json            one venue with 10+ upcoming events
+  /artist/<slug>.json           one act with 5+ upcoming dates
+  /venues.json                  every venue, with its city and event count
+  /cities.json                  every city, with its event count
+  /artists.json                 every extracted act, with confidence and count
   /llm.txt  /llms.txt           this file
 
-Every route exists as `.json` and `.tsv`. City and venue slugs are lowercase
-ASCII with dashes ("Den Haag" -> `den-haag`); `routes.json` has the exact list.
+Every route exists as `.json` and `.tsv`, except the three registries, which
+are JSON only — they hold entity records, not event rows. City, venue and
+artist slugs are lowercase ASCII with dashes ("Den Haag" -> `den-haag`);
+`routes.json` has the exact list.
 
 For a small context, prefer `/city/<slug>/week.json` (tens of events) over
 `/events.json` (thousands).
@@ -40,14 +46,19 @@ every 15 minutes. Writes are atomic: a `200` is never a partial file.
 Route files share one envelope:
 
     {
+      "schema_version": "1.0.0",                    # semver; minor = added field
       "generated_at": "2026-08-30T16:17:04+0200",   # ISO 8601, Europe/Amsterdam
       "healthy": true,                              # false = see problems
       "problems": [],
       "route": "city/amsterdam",                    # absent in events.json
       "count": 412,
       "sources": {...},                             # events.json / health.json only
-      "events": [ ... ]
+      "events": [ ... ]                             # or venues / cities / artists
     }
+
+`schema_version` is the contract this file describes. A minor bump adds a key
+and never moves one; a major bump means an existing key changed meaning. Pin
+nothing else: `generated_at` and the counts change four times a day.
 
 Each event:
 
@@ -61,20 +72,65 @@ Each event:
     url     "https://..."  detail/ticket page at the venue or the aggregator.
     source  "paradiso"     which scraper produced the row.
 
-All eight keys are on every event; absence is `""`, never `null`, never a
-missing key. Sorted by `(date, time, title)`. Nothing that has already finished
-is published — an event with a past `date` is a festival still running, which
-is what `end` is for.
+    venue_id   "paradiso"        the Venue in /venues.json. "" when no venue named.
+    city_id    "amsterdam"       the City in /cities.json. "" when no city named.
+    artist_ids "dixon,gizem"     comma-separated Artist ids, "" when none found.
+
+All twelve keys are on every event; absence is `""`, never `null`, never a
+missing key. The nine above the gap are the original ones and keep their order;
+the three ids were appended and nothing else moved. Sorted by
+`(date, time, title)`. Nothing that has already finished is published — an
+event with a past `date` is a festival still running, which is what `end` is
+for.
+
+An id is the slug of the entity's canonical name, so it is stable between runs
+and readable in a URL. Match on `venue_id`, not on `venue`: the same room is
+spelt several ways across sources ("TivoliVredenburg", "Tivoli Vredenburg"),
+and only the id collapses them.
 
 `.tsv` is headerless, one event per line, same order, fields never containing
 tabs or newlines:
 
-    source <TAB> date <TAB> end <TAB> time <TAB> title <TAB> venue <TAB> city <TAB> status <TAB> url
+    source <TAB> date <TAB> end <TAB> time <TAB> title <TAB> venue <TAB> city <TAB> status <TAB> url <TAB> venue_id <TAB> city_id <TAB> artist_ids
+
+The first nine columns are the original ones, unchanged and in the original
+order; the three ids were appended after them, so `cut -f2,5,7` still means
+what it always meant.
+
+## Registries
+
+Three files name the things the events point at. They share the envelope above
+and carry their records under a key matching the file name.
+
+    /venues.json   {"id","name","city","city_id","count"}
+    /cities.json   {"id","name","count"}
+    /artists.json  {"id","name","confidence","count"}
+
+`count` is how many currently published events belong to that entity, so the
+registries are the cheap way to answer "which venue is busiest in Rotterdam"
+without reading the feed. Sorted by count descending, then by name.
+
+Artists are the soft one. No source publishes a lineup field, so the names are
+lifted out of the event title by a rule: cut bracketed noise, cut a promoter's
+"X presents" prefix, split on the separators promoters use (`+`, `&`, ` x `,
+`b2b`, `w/`, `feat.`, `//`, `/`), then drop the parts that name a genre or a
+format. `confidence` says how much that rule trusts the name:
+
+    high    an explicit separator framed it — the strongest signal there is
+    medium  the whole title was one clean name
+    low     a brand prefix had to be cut off first
+
+Filter on `confidence == "high"` when precision matters. `/artist/<slug>.json`
+exists only for acts with five or more upcoming dates, which is roughly where
+the false positives stop.
 
 ## Sources
 
     ra-nl          Resident Advisor, area "Netherlands All" — club and dance
                    nights at every venue in the country, 45 days ahead.
+    partyflock     partyflock.nl — nationwide dance agenda, three months ahead.
+                   The widest venue coverage in the feed by a long way: bars,
+                   boats and one-off locations no venue scraper reaches.
     podiuminfo     podiuminfo.nl — every announced concert in NL, 45 days ahead.
     festivalinfo   festivalinfo.nl — every Dutch festival, 120 days ahead.
     tivoli         TivoliVredenburg, Utrecht      (~2.5 months, scroll-limited)
@@ -85,11 +141,27 @@ tabs or newlines:
     muziekgieterij Muziekgieterij, Maastricht
     musicon        Musicon, Den Haag
     dbstudio       dB's, Utrecht
+    013            013, Tilburg
+    spot           SPOT Groningen — De Oosterpoort, Stadsschouwburg and the
+                   Machinefabriek, published as three separate venues.
+    melkweg        Melkweg, Amsterdam
+    effenaar       Effenaar, Eindhoven
+    patronaat      Patronaat, Haarlem
+    afaslive       AFAS Live, Amsterdam
+    hedon          Hedon, Zwolle
+    neushoorn      Neushoorn, Leeuwarden
+    gebrdenobel    Gebr. de Nobel, Leiden
+    victorie       Podium Victorie, Alkmaar
+    burgerweeshuis Burgerweeshuis, Deventer
+    gigant         Gigant, Apeldoorn
+    annabel        Annabel, Rotterdam
+    vera           Vera, Groningen
 
-The venue scrapers exist for what the aggregators drop: ticket status and a
-link to the venue's own page. Everything else in the country arrives through
-ra-nl, podiuminfo and festivalinfo. Belgian listings on the two aggregators are
-filtered out.
+The venue scrapers exist for what the aggregators drop: ticket status, a link
+to the venue's own page, and a horizon that runs past the aggregators' 45 days.
+Everything else in the country arrives through ra-nl, partyflock, podiuminfo
+and festivalinfo. Belgian, German and other non-Dutch listings are filtered out
+of all four.
 
 ## Health
 
@@ -103,9 +175,11 @@ refresh timer itself stopped.
 ## Caveats
 
 - Duplicates are already removed: when an aggregator and the venue itself
-  report the same day + city + title, the venue's row wins. Different titles
-  for the same night (promoters brand club nights differently per platform)
-  survive as two rows — match loosely if exactness matters.
+  report the same day + venue + title, the venue's row wins. Matching on the
+  resolved venue rather than on the free-text city also catches the pair where
+  only one of the two named a city. Different titles for the same night
+  (promoters brand club nights differently per platform) survive as two rows —
+  match loosely if exactness matters.
 - Coverage differs by horizon, and this is the feed's sharpest edge. The
   aggregators are capped at 45 days (120 for festivals). The venue scrapers
   reach as far as the venue itself publishes on one page: Rotown 13 months,
@@ -115,7 +189,10 @@ refresh timer itself stopped.
   roughly six weeks, thins out over the two months after that, and past ~4
   months only a handful of venues are represented. A quiet January is a
   coverage artefact, not an empty agenda.
-- `city` is empty for RA events outside its six Dutch city areas.
+- `city` and `city_id` are empty for RA events outside its six Dutch city areas.
+- `artist_ids` is a guess, not a credit list. A club night branded as one word
+  yields one low-confidence "artist" that is really the night; a support act
+  the title never mentions is simply absent.
 - `venue` is a label. RA rows carry whatever room the night is held in — a bar,
   a studio, a boat.
 - `status` reflects the last scrape, up to 6 hours old, and only the venue

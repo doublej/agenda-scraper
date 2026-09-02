@@ -8,6 +8,10 @@ jsonld One GET, schema.org blocks in the HTML. Podiuminfo (every concert in
        NL) and Festivalinfo (every festival) paginate; De Helling, Rotown
        and Muziekgieterij publish their whole agenda on one page. The Events
        Calendar's REST API (Musicon, dB's) is the same idea with less HTML.
+cards  One GET, <time datetime> in the listing markup. The last cheap tier:
+       no Dutch venue site outside the two aggregators serves schema.org, but
+       the semantic time element is in every listing template. 013, Spot
+       (three buildings off one page) and Victorie all answer on it.
 render Real Chrome over CDP. Only TivoliVredenburg (Cloudflare managed
        challenge — curl, headless Chrome and WebFetch all get 403) and
        Paradiso (no agenda route at all; the homepage is an infinite scroll
@@ -20,12 +24,16 @@ import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
+from functools import partial
 
 from agenda_scraper import Event
+from agenda_scraper.entities.resolve import CITY_ALIAS
 from agenda_scraper.scrape.browser import browser_credentials, render
+from agenda_scraper.scrape.cards import CARD_SOURCES, parse_cards
 from agenda_scraper.scrape.http import get, post_json
 from agenda_scraper.scrape.parsers import (
     parse_jsonld,
+    parse_microdata,
     parse_paradiso,
     parse_tivoli,
     unescape,
@@ -175,6 +183,33 @@ def wp_events(base: str, venue: str, per_page: int = 100) -> list[Event]:
     return sorted(out, key=lambda e: e["date"])
 
 
+def cards(url: str, venue: str = "", dates: str = "time") -> list[Event]:
+    """A listing whose only structure is a date next to a heading."""
+    return parse_cards(get(url), venue, url, dates)
+
+
+def partyflock(months: int = 3) -> list[Event]:
+    """Partyflock's month pages — schema.org as microdata, Dutch rows only.
+
+    A nationwide dance agenda, so it reaches the bars, boats and one-off
+    locations no venue scraper covers: three month pages carry more distinct
+    venues than every other source in this file put together. robots.txt allows
+    it and asks for no delay; it gets one request a page, a second apart.
+    """
+    today = str(date.today())
+    year, month = date.today().year, date.today().month
+    seen: set[str] = set()
+    out: list[Event] = []
+    for _ in range(months):
+        for e in parse_microdata(get(f"https://partyflock.nl/agenda/{year}/{month}")):
+            if e["country"] == "NL" and e["date"] >= today and e["url"] not in seen:
+                seen.add(e["url"])
+                out.append(e)
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+        time.sleep(1)
+    return out
+
+
 def jsonld_page(url: str, venue: str) -> list[Event]:
     """A venue that publishes its whole agenda as JSON-LD on one page."""
     return [{**e, "venue": e["venue"] or venue} for e in parse_jsonld(get(url))]
@@ -213,6 +248,7 @@ def enrich_from_detail(
 SOURCES: dict[str, Callable[[], list[Event]]] = {
     # nationwide
     "ra-nl": ra_events,
+    "partyflock": partyflock,
     "podiuminfo": lambda: paged_jsonld(
         "https://www.podiuminfo.nl/concertagenda/?page={page}", days=45
     ),
@@ -251,10 +287,12 @@ SOURCE_CITY = {
     "musicon": "Den Haag",
 }
 
-# One spelling per city, so /city/<slug> does not split in two.
-CITY_ALIAS = {
-    "The Hague": "Den Haag",
-    "'s-Gravenhage": "Den Haag",
-    "Den Bosch": "'s-Hertogenbosch",
-    "Amsterdam-Zuidoost": "Amsterdam",
-}
+__all__ = ["CITY_ALIAS", "SOURCES", "SOURCE_CITY"]
+
+SOURCES.update(
+    {
+        name: partial(cards, url, venue, dates)
+        for name, (url, venue, _, dates) in CARD_SOURCES.items()
+    }
+)
+SOURCE_CITY.update({name: city for name, (_, _, city, _) in CARD_SOURCES.items()})

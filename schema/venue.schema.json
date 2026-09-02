@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "venue.schema.json",
+  "title": "Venue",
+  "description": "A room or building events happen in. `city` is \"\" when no source has named one yet.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "city", "city_id"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "name": { "type": "string", "minLength": 1 },
+    "city": { "type": "string" },
+    "city_id": { "type": "string", "pattern": "^[a-z0-9-]*$" },
+    "count": { "type": "integer", "minimum": 0 }
+  }
+}

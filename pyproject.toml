@@ -13,13 +13,6 @@ dependencies = [
 [project.scripts]
 agenda-scraper = "agenda_scraper.cli:main"
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=9.0.0",
-    "ruff>=0.16.0",
-    "mypy>=2.0.0",
-]
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -37,3 +30,15 @@ extend-exclude = [".claude"]  # scaffold-shipped scripts, not ours to lint
 # Every date here is a Dutch calendar date printed on a poster, not an instant:
 # a tz-aware datetime would be the wrong type, not a safer one.
 ignore = ["DTZ011"]
+
+# A group, not an optional-dependencies extra: `uv sync` installs groups by
+# default, so `just install` gives you the linter and the type checker that
+# `just check` runs. As an extra they were never installed, and `uv run mypy`
+# silently fell through to whatever mypy was on $PATH.
+[dependency-groups]
+dev = [
+    "jsonschema>=4.26.0",
+    "mypy>=1.17.0",
+    "pytest>=9.0.0",
+    "ruff>=0.16.0",
+]

@@ -1,0 +1,31 @@
+{
+ "parser": "cards",
+ "args": {
+  "venue": "AFAS Live",
+  "origin": "https://www.afaslive.nl/agenda",
+  "dates": "dutch"
+ },
+ "events": [
+  {
+   "date": "2026-09-04",
+   "time": "",
+   "title": "The Black Keys",
+   "venue": "AFAS Live",
+   "url": "https://www.afaslive.nl/agenda/the-black-keys"
+  },
+  {
+   "date": "2026-09-05",
+   "time": "",
+   "title": "The Black Keys",
+   "venue": "AFAS Live",
+   "url": "https://www.afaslive.nl/agenda/the-black-keys"
+  },
+  {
+   "date": "2026-09-06",
+   "time": "",
+   "title": "Kumar Sanu & Anuradha Paudwal",
+   "venue": "AFAS Live",
+   "url": "https://www.afaslive.nl/agenda/kumarsanu-anuradhapaudwal"
+  }
+ ]
+}

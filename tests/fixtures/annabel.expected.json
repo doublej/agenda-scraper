@@ -1,0 +1,31 @@
+{
+ "parser": "cards",
+ "args": {
+  "venue": "Annabel",
+  "origin": "https://www.annabel.nu/agenda",
+  "dates": "dutch"
+ },
+ "events": [
+  {
+   "date": "2026-07-31",
+   "time": "",
+   "title": "Zomerclub – Elke vrijdag & zaterdag in Anna’s Café",
+   "venue": "Annabel",
+   "url": "https://www.annabel.nu/agenda"
+  },
+  {
+   "date": "2026-09-05",
+   "time": "",
+   "title": "bratty • w/ charli xcx & other brat coded artists • rotterdam",
+   "venue": "Annabel",
+   "url": "https://annabel.nu/zomerclub-in-annas-cafe/"
+  },
+  {
+   "date": "2026-09-11",
+   "time": "",
+   "title": "Wepa Bunny Party",
+   "venue": "Annabel",
+   "url": "https://annabel.nu/bratty-5-september/"
+  }
+ ]
+}

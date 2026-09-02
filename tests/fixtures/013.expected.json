@@ -1,0 +1,31 @@
+{
+ "parser": "cards",
+ "args": {
+  "venue": "013",
+  "origin": "https://www.013.nl/programma",
+  "dates": "time"
+ },
+ "events": [
+  {
+   "date": "2026-09-03",
+   "time": "20:00",
+   "title": "Davina Michelle",
+   "venue": "013",
+   "url": "https://www.013.nl/programma/126493/davina-michelle"
+  },
+  {
+   "date": "2026-09-03",
+   "time": "20:00",
+   "title": "Draaimolen Opening Concert",
+   "venue": "013",
+   "url": "https://www.013.nl/programma/144915/draaimolen-opening-concert"
+  },
+  {
+   "date": "2026-09-04",
+   "time": "20:15",
+   "title": "Sander Kwarten",
+   "venue": "013",
+   "url": "https://www.013.nl/programma/127074/sander-kwarten"
+  }
+ ]
+}
