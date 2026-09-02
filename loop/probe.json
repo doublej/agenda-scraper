@@ -1,0 +1,450 @@
+[
+ {
+  "name": "melkweg",
+  "base": "https://www.melkweg.nl",
+  "venue": "Melkweg",
+  "city": "Amsterdam",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "013",
+  "base": "https://www.013.nl",
+  "venue": "013",
+  "city": "Tilburg",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "effenaar",
+  "base": "https://www.effenaar.nl",
+  "venue": "Effenaar",
+  "city": "Eindhoven",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "doornroosje",
+  "base": "https://www.doornroosje.nl",
+  "venue": "Doornroosje",
+  "city": "Nijmegen",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "patronaat",
+  "base": "https://www.patronaat.nl",
+  "venue": "Patronaat",
+  "city": "Haarlem",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "paard",
+  "base": "https://www.paard.nl",
+  "venue": "Paard",
+  "city": "Den Haag",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "vera",
+  "base": "https://www.vera-groningen.nl",
+  "venue": "Vera",
+  "city": "Groningen",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "simplon",
+  "base": "https://www.simplon.nl",
+  "venue": "Simplon",
+  "city": "Groningen",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "hedon",
+  "base": "https://www.hedon-zwolle.nl",
+  "venue": "Hedon",
+  "city": "Zwolle",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "neushoorn",
+  "base": "https://www.neushoorn.nl",
+  "venue": "Neushoorn",
+  "city": "Leeuwarden",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "metropool",
+  "base": "https://www.metropool.nl",
+  "venue": "Metropool",
+  "city": "Hengelo",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "gebrdenobel",
+  "base": "https://www.gebrdenobel.nl",
+  "venue": "Gebr. de Nobel",
+  "city": "Leiden",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/events/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "bibelot",
+  "base": "https://www.bibelot.net",
+  "venue": "Bibelot",
+  "city": "Dordrecht",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "volt",
+  "base": "https://www.poppodiumvolt.nl",
+  "venue": "Volt",
+  "city": "Sittard",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "spot",
+  "base": "https://www.spotgroningen.nl",
+  "venue": "Spot",
+  "city": "Groningen",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "tolhuistuin",
+  "base": "https://www.tolhuistuin.nl",
+  "venue": "Tolhuistuin",
+  "city": "Amsterdam",
+  "tribe_error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify fai",
+  "jsonld_error": "/agenda/ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate v",
+  "wp_error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify fai",
+  "tier": "none"
+ },
+ {
+  "name": "lantarenvenster",
+  "base": "https://www.lantarenvenster.nl",
+  "venue": "LantarenVenster",
+  "city": "Rotterdam",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "burgerweeshuis",
+  "base": "https://www.burgerweeshuis.nl",
+  "venue": "Burgerweeshuis",
+  "city": "Deventer",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "nieuwenor",
+  "base": "https://www.nieuwenor.nl",
+  "venue": "Nieuwe Nor",
+  "city": "Heerlen",
+  "tribe_error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+  "wp_error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+  "tier": "none"
+ },
+ {
+  "name": "willem2",
+  "base": "https://www.w2.nl",
+  "venue": "W2",
+  "city": "'s-Hertogenbosch",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "willemeen",
+  "base": "https://www.willemeen.nl",
+  "venue": "Willemeen",
+  "city": "Arnhem",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "luxorlive",
+  "base": "https://www.luxorlive.nl",
+  "venue": "Luxor Live",
+  "city": "Arnhem",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/events/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "gigant",
+  "base": "https://www.gigant.nl",
+  "venue": "Gigant",
+  "city": "Apeldoorn",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "atak",
+  "base": "https://www.atak.nl",
+  "venue": "ATAK",
+  "city": "Enschede",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "p60",
+  "base": "https://www.p60.nl",
+  "venue": "P60",
+  "city": "Amstelveen",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "grenswerk",
+  "base": "https://www.grenswerk.nl",
+  "venue": "Grenswerk",
+  "city": "Venlo",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "boerderij",
+  "base": "https://www.cultuurpodiumboerderij.nl",
+  "venue": "Boerderij",
+  "city": "Zoetermeer",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 302: The HTTP server returned a redirect error that would ",
+  "tier": "none"
+ },
+ {
+  "name": "iduna",
+  "base": "https://www.iduna.nl",
+  "venue": "Iduna",
+  "city": "Drachten",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "baroeg",
+  "base": "https://www.baroeg.nl",
+  "venue": "Baroeg",
+  "city": "Rotterdam",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "worm",
+  "base": "https://www.worm.org",
+  "venue": "WORM",
+  "city": "Rotterdam",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "annabel",
+  "base": "https://www.annabel.nu",
+  "venue": "Annabel",
+  "city": "Rotterdam",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "paradox",
+  "base": "https://www.paradox.nl",
+  "venue": "Paradox",
+  "city": "Tilburg",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "extrapool",
+  "base": "https://extrapool.nl",
+  "venue": "Extrapool",
+  "city": "Nijmegen",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "qfactory",
+  "base": "https://www.q-factory.nl",
+  "venue": "Q-Factory",
+  "city": "Amsterdam",
+  "tribe_error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify fai",
+  "jsonld_error": "/agenda/ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate v",
+  "wp_error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify fai",
+  "tier": "none"
+ },
+ {
+  "name": "afaslive",
+  "base": "https://www.afaslive.nl",
+  "venue": "AFAS Live",
+  "city": "Amsterdam",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "asteriks",
+  "base": "https://www.podiumasteriks.nl",
+  "venue": "Asteriks",
+  "city": "Leeuwarden",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "hal4",
+  "base": "https://www.hal4aandekade.nl",
+  "venue": "Hal 4",
+  "city": "Rotterdam",
+  "tribe_error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+  "jsonld_error": "/agenda/ URLError: <urlopen error [Errno 8] nodename nor servname provided, or n",
+  "wp_error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+  "tier": "none"
+ },
+ {
+  "name": "podiumhoogeveen",
+  "base": "https://www.podiumhoogeveen.nl",
+  "venue": "Podium Hoogeveen",
+  "city": "Hoogeveen",
+  "tribe_error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+  "jsonld_error": "/agenda/ URLError: <urlopen error [Errno 8] nodename nor servname provided, or n",
+  "wp_error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+  "tier": "none"
+ },
+ {
+  "name": "deflux",
+  "base": "https://www.deflux.nl",
+  "venue": "De Flux",
+  "city": "Zaandam",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "poppodiumemergo",
+  "base": "https://www.emergo-nl.nl",
+  "venue": "Emergo",
+  "city": "Etten-Leur",
+  "tribe_error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+  "jsonld_error": "/agenda/ URLError: <urlopen error [Errno 8] nodename nor servname provided, or n",
+  "wp_error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+  "tier": "none"
+ },
+ {
+  "name": "kroepoekfabriek",
+  "base": "https://www.kroepoekfabriek.nl",
+  "venue": "Kroepoekfabriek",
+  "city": "Vlaardingen",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/events/ HTTPError: HTTP Error 404: Not Found",
+  "wp_error": "HTTPError: HTTP Error 404: Not Found",
+  "tier": "none"
+ },
+ {
+  "name": "stadsgehoorzaal",
+  "base": "https://www.stadsgehoorzaalvlaardingen.nl",
+  "venue": "Stadsgehoorzaal",
+  "city": "Vlaardingen",
+  "tribe_error": "URLError: <urlopen error [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal ",
+  "jsonld_error": "/agenda/ URLError: <urlopen error [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert ",
+  "wp_error": "URLError: <urlopen error [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal ",
+  "tier": "none"
+ },
+ {
+  "name": "bitterzoet",
+  "base": "https://www.bitterzoet.com",
+  "venue": "Bitterzoet",
+  "city": "Amsterdam",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/programma/ HTTPError: HTTP Error 404: Not Found",
+  "tier": "wp",
+  "total": 5
+ },
+ {
+  "name": "victorie",
+  "base": "https://www.podiumvictorie.nl",
+  "venue": "Victorie",
+  "city": "Alkmaar",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "tier": "wp",
+  "total": 5
+ },
+ {
+  "name": "mezz",
+  "base": "https://www.mezz.nl",
+  "venue": "Mezz",
+  "city": "Breda",
+  "tribe_error": "HTTPError: HTTP Error 404: Not Found",
+  "jsonld_error": "/agenda/ HTTPError: HTTP Error 404: Not Found",
+  "tier": "wp",
+  "total": 5
+ }
+]

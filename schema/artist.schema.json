@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "artist.schema.json",
+  "title": "Artist",
+  "description": "A performer name lifted out of an event title by a heuristic. `confidence` says how much that heuristic trusts itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "confidence"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "name": { "type": "string", "minLength": 1 },
+    "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+    "count": { "type": "integer", "minimum": 0 }
+  }
+}

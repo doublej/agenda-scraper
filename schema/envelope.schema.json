@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "envelope.schema.json",
+  "title": "Route envelope",
+  "description": "Every published .json file: the five envelope keys, then exactly one payload — events for a slice route, one of the three registries, the route index, or nothing at all.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "healthy", "problems", "count"],
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "generated_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{4}$"
+    },
+    "healthy": { "type": "boolean" },
+    "problems": { "type": "array", "items": { "type": "string" } },
+    "route": { "type": "string" },
+    "label": { "type": "string" },
+    "count": { "type": "integer", "minimum": 0 },
+    "routes": {
+      "description": "routes.json lists them; health.json only counts them.",
+      "anyOf": [
+        { "type": "integer", "minimum": 0 },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["route", "label", "count", "json", "tsv"],
+            "properties": {
+              "route": { "type": "string" },
+              "label": { "type": "string" },
+              "count": { "type": "integer", "minimum": 0 },
+              "json": { "type": "string" },
+              "tsv": { "type": "string" }
+            }
+          }
+        }
+      ]
+    },
+    "events": { "type": "array", "items": { "$ref": "event.schema.json" } },
+    "venues": { "type": "array", "items": { "$ref": "venue.schema.json" } },
+    "cities": { "type": "array", "items": { "$ref": "city.schema.json" } },
+    "artists": { "type": "array", "items": { "$ref": "artist.schema.json" } },
+    "sources": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["ok", "count"],
+        "properties": {
+          "ok": { "type": "boolean" },
+          "count": { "type": "integer", "minimum": 0 },
+          "error": { "type": "string" }
+        }
+      }
+    }
+  }
+}

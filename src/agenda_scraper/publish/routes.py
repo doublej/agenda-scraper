@@ -1,83 +1,48 @@
-"""Health assessment, deduplication and the static route files.
+"""The static route files: every slice worth a URL, plus the entity registries.
 
 The site is served by `python3 -m http.server`, which ignores query strings —
 so filtering has to be baked into paths, not parameters. Every slice an agent
-might ask for (a city, a source, a venue, the next week) is written as its own
-JSON+TSV file at scrape time, and `routes.json` indexes the lot.
+might ask for (a city, a source, a venue, an artist, the next week) is written
+as its own file at scrape time, and `routes.json` indexes the lot.
 """
 
 import json
-import re
 import time
-import unicodedata
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Any
 
 from agenda_scraper import Event, Report
-
-# Aggregators list the same night as the venue itself. Lower index wins, so a
-# duplicate keeps the venue's own page (real ticket status, real detail URL).
-SOURCE_RANK = (
-    "paradiso",
-    "tivoli",
-    "dehelling",
-    "ekko",
-    "rotown",
-    "musicon",
-    "dbstudio",
-    "muziekgieterij",
-    "ra-nl",
-    "podiuminfo",
-    "festivalinfo",
+from agenda_scraper.entities import (
+    SCHEMA_VERSION,
+    Artist,
+    City,
+    Venue,
+    extract_artists,
+    resolve_city,
+    resolve_venue,
+    slugify,
+)
+from agenda_scraper.publish.feed import (
+    annotate,
+    as_tsv,
+    assess,
+    current,
+    dedupe,
+    venue_id,
 )
 
 WINDOWS = (("today", 1), ("week", 7), ("month", 31))
 CITY_WINDOW = 7  # cities also get a week view; nothing finer is useful
 CITY_WINDOW_MIN = 20  # ... but only where a week actually holds something
 VENUE_MIN_EVENTS = 10  # below this a venue route is noise, not a route
-
-FIELDS = ("source", "date", "end", "time", "title", "venue", "city", "status", "url")
-
-
-def slugify(name: str) -> str:
-    """ "Den Haag" -> "den-haag". Stable enough to be part of a URL."""
-    flat = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
-    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", flat.lower())).strip("-")
+ARTIST_MIN_EVENTS = 5  # an artist route is only worth a file for a touring act
 
 
-def _title_key(title: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "", title.lower())
-
-
-def dedupe(events: list[Event]) -> list[Event]:
-    """Drop the aggregator's copy of an event a venue source already reported.
-
-    Same day, same city, same title is the only claim confident enough to act
-    on: promoters brand club nights differently per platform, so a looser key
-    would merge events that are genuinely separate.
-    """
-    rank = {name: i for i, name in enumerate(SOURCE_RANK)}
-    best: dict = {}
-    for e in events:
-        key = (e["date"], e.get("city", ""), _title_key(e["title"]))
-        if not key[1] or not key[2]:  # unknown city or empty title
-            best[id(e)] = e
-            continue
-        cur = best.get(key)
-        if cur is None or rank.get(e["source"], 99) < rank.get(cur["source"], 99):
-            best[key] = e
-    return sorted(best.values(), key=lambda e: (e["date"], e["time"], e["title"]))
-
-
-def current(events: list[Event], today: str | None = None) -> list[Event]:
-    """Events that have not finished yet; a multi-day festival stays until its end."""
-    today = today or str(date.today())
-    return [e for e in events if (e.get("end") or e["date"]) >= today]
-
-
-def as_tsv(events: list[Event]) -> str:
-    return "\n".join("\t".join(e.get(f, "") for f in FIELDS) for e in events)
+def _by_count(record: Mapping[str, Any]) -> tuple[int, str]:
+    """Busiest first, then alphabetical — a registry is read top down."""
+    return -int(record.get("count", 0)), str(record["name"]).lower()
 
 
 def _window(events: list[Event], days: int) -> list[Event]:
@@ -92,6 +57,41 @@ def _group(events: list[Event], key: str) -> dict[str, list[Event]]:
         if e.get(key):
             out.setdefault(e[key], []).append(e)
     return out
+
+
+def build_registries(
+    events: list[Event],
+) -> tuple[list[Venue], list[City], list[Artist]]:
+    """Roll the published events up into the three entity registries.
+
+    Names are re-derived rather than carried on the event rows: an event stays a
+    flat dict of strings, so it can hold ids but not a nested artist record.
+    """
+    venues: dict[str, Venue] = {}
+    cities: dict[str, City] = {}
+    artists: dict[str, Artist] = {}
+    for e in events:
+        if e.get("venue"):
+            v = resolve_venue(e["venue"], e.get("city", ""))
+            hit = venues.setdefault(v["id"], {**v, "count": 0})
+            hit["count"] = hit.get("count", 0) + 1
+            if not hit["city"] and v["city"]:  # first source to name the city wins
+                hit["city"], hit["city_id"] = v["city"], v["city_id"]
+        if e.get("city"):
+            c = resolve_city(e["city"])
+            if c["id"]:
+                seen_c = cities.setdefault(c["id"], {**c, "count": 0})
+                seen_c["count"] = seen_c.get("count", 0) + 1
+        for a in extract_artists(e.get("title", "")):
+            seen_a = artists.setdefault(a["id"], {**a, "count": 0})
+            seen_a["count"] = seen_a.get("count", 0) + 1
+            if a["confidence"] == "high":  # the strongest sighting sets the field
+                seen_a["confidence"] = "high"
+    return (
+        sorted(venues.values(), key=_by_count),
+        sorted(cities.values(), key=_by_count),
+        sorted(artists.values(), key=_by_count),
+    )
 
 
 def plan_routes(events: list[Event]) -> list[tuple[str, str, list[Event]]]:
@@ -113,10 +113,27 @@ def plan_routes(events: list[Event]) -> list[tuple[str, str, list[Event]]]:
             )
     for source, rows in sorted(_group(events, "source").items()):
         routes.append((f"source/{source}", f"bron {source}", rows))
+    # Venue routes stay keyed on the label a source published, not on venue_id:
+    # re-keying them would rename URLs that already exist.
     for venue, rows in sorted(_group(events, "venue").items()):
         if len(rows) >= VENUE_MIN_EVENTS:
             routes.append((f"venue/{slugify(venue)}", venue, rows))
+    routes += _artist_routes(events)
     return routes
+
+
+def _artist_routes(events: list[Event]) -> list[tuple[str, str, list[Event]]]:
+    """One route per act with enough dates to be worth following."""
+    names = {a["id"]: a["name"] for e in events for a in extract_artists(e["title"])}
+    by_artist: dict[str, list[Event]] = {}
+    for e in events:
+        for aid in filter(None, e.get("artist_ids", "").split(",")):
+            by_artist.setdefault(aid, []).append(e)
+    return [
+        (f"artist/{aid}", names.get(aid, aid), rows)
+        for aid, rows in sorted(by_artist.items())
+        if len(rows) >= ARTIST_MIN_EVENTS
+    ]
 
 
 def _write(path: Path, body: str) -> None:
@@ -128,14 +145,41 @@ def _write(path: Path, body: str) -> None:
 
 def _prune(out_dir: Path, keep: set[Path]) -> None:
     """Delete route files from earlier runs whose slice no longer exists."""
-    for sub in ("city", "source", "venue"):
+    for sub in ("city", "source", "venue", "artist"):
         for old in sorted((out_dir / sub).rglob("*")):
             if old.is_file() and old not in keep:
                 old.unlink()
 
 
+def write_registries(out_dir: Path, events: list[Event], envelope: dict) -> list[dict]:
+    """Write venues.json, cities.json and artists.json. Returns index entries."""
+    venues, cities, artists = build_registries(events)
+    # The registry key doubles as the file name, so a reader can tell a registry
+    # from an event route without parsing the path.
+    registries: list[tuple[str, list[Any]]] = [
+        ("venues", list(venues)),
+        ("cities", list(cities)),
+        ("artists", list(artists)),
+    ]
+    index = []
+    for name, records in registries:
+        doc = {**envelope, "route": name, "label": name, "count": len(records)}
+        doc[name] = records
+        _write(out_dir / f"{name}.json", json.dumps(doc, ensure_ascii=False))
+        index.append(
+            {
+                "route": name,
+                "label": name,
+                "count": len(records),
+                "json": f"/{name}.json",
+                "tsv": "",
+            }
+        )
+    return index
+
+
 def write_routes(out_dir: Path, events: list[Event], envelope: dict) -> list[dict]:
-    """Write every route as JSON+TSV, plus routes.json. Returns the index."""
+    """Write every route as JSON+TSV, plus the registries and routes.json."""
     out_dir = Path(out_dir)
     index: list[dict] = []
     written: set[Path] = set()
@@ -163,6 +207,7 @@ def write_routes(out_dir: Path, events: list[Event], envelope: dict) -> list[dic
             }
         )
     _prune(out_dir, written)
+    index += write_registries(out_dir, events, envelope)
     _write(
         out_dir / "routes.json",
         json.dumps(
@@ -172,38 +217,6 @@ def write_routes(out_dir: Path, events: list[Event], envelope: dict) -> list[dic
         ),
     )
     return index
-
-
-def assess(report: Report, history_path: Path) -> list[str]:
-    """Compare this run against recent ones and name what looks wrong.
-
-    A scraper's normal failure is silent: the site reshuffles its markup, the
-    parser matches nothing, and the run still exits 0 with an empty list. So a
-    source is a problem when it throws, when it returns nothing, and when it
-    returns far less than it usually does — the last one is what caught
-    Paradiso dropping from 348 to 174.
-    """
-    history_path = Path(history_path)
-    try:
-        hist = json.loads(history_path.read_text())
-    except (OSError, ValueError):
-        hist = {}
-    problems = []
-    for name, r in sorted(report.items()):
-        past = hist.get(name, [])
-        if not r["ok"]:
-            problems.append(f"{name}: failed — {r.get('error', '')[:120]}")
-        elif r["count"] == 0:
-            problems.append(f"{name}: returned 0 events")
-        elif past:
-            norm = sorted(past)[len(past) // 2]
-            if r["count"] < norm * 0.5:
-                problems.append(f"{name}: {r['count']} events, normally ~{norm}")
-        if r["ok"] and r["count"]:
-            hist[name] = (past + [r["count"]])[-7:]  # only good runs set the norm
-    history_path.parent.mkdir(parents=True, exist_ok=True)
-    history_path.write_text(json.dumps(hist, indent=1))
-    return problems
 
 
 def write_out(
@@ -216,8 +229,9 @@ def write_out(
     """Atomic publish of the full feed plus every route. Non-zero when unhealthy."""
     out_dir = Path(out_dir)
     problems = assess(report, history_path)
-    events = dedupe(current(events))
+    events = dedupe(current(annotate(events)))
     envelope = {
+        "schema_version": SCHEMA_VERSION,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "healthy": not problems,
         "problems": problems,
@@ -245,3 +259,6 @@ def write_out(
     )
     log(f"# wrote {len(events)} events and {len(index)} routes to {out_dir}")
     return 1 if problems else 0
+
+
+__all__ = ["build_registries", "plan_routes", "venue_id", "write_out", "write_routes"]

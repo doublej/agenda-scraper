@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "city.schema.json",
+  "title": "City",
+  "description": "One Dutch city, in the one spelling the feed uses for it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "name": { "type": "string", "minLength": 1 },
+    "count": { "type": "integer", "minimum": 0 }
+  }
+}

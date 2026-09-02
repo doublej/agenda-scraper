@@ -1,0 +1,31 @@
+{
+ "parser": "cards",
+ "args": {
+  "venue": "Effenaar",
+  "origin": "https://www.effenaar.nl/agenda",
+  "dates": "dutch"
+ },
+ "events": [
+  {
+   "date": "2026-09-17",
+   "time": "",
+   "title": "The Accüsed | Extra show",
+   "venue": "Effenaar",
+   "url": "https://www.effenaar.nl/agenda/accused-extra-show"
+  },
+  {
+   "date": "2026-10-10",
+   "time": "",
+   "title": "Metatron",
+   "venue": "Effenaar",
+   "url": "https://www.effenaar.nl/agenda/metatron"
+  },
+  {
+   "date": "2026-10-18",
+   "time": "",
+   "title": "RONDÉ",
+   "venue": "Effenaar",
+   "url": "https://www.effenaar.nl/agenda/ronde-18okt"
+  }
+ ]
+}

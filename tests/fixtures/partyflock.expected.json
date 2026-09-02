@@ -1,0 +1,50 @@
+{
+ "parser": "microdata",
+ "args": {
+  "venue": "",
+  "origin": "https://partyflock.nl/agenda",
+  "dates": "time"
+ },
+ "events": [
+  {
+   "date": "2026-09-03",
+   "end": "",
+   "time": "00:00",
+   "title": "Latin Wednesday",
+   "venue": "Out",
+   "city": "Amsterdam",
+   "country": "NL",
+   "url": "https://partyflock.nl/party/489252:Latin-Wednesday"
+  },
+  {
+   "date": "2026-09-03",
+   "end": "",
+   "time": "01:00",
+   "title": "Raving Charlie · Hard Techno Rave",
+   "venue": "nachbar",
+   "city": "Amsterdam",
+   "country": "NL",
+   "url": "https://partyflock.nl/party/494411:Raving-Charlie"
+  },
+  {
+   "date": "2026-09-03",
+   "end": "",
+   "time": "01:00",
+   "title": "Resistnace",
+   "venue": "Amnesia",
+   "city": "San Rafael",
+   "country": "ES",
+   "url": "https://partyflock.nl/party/497050:Resistnace"
+  },
+  {
+   "date": "2026-09-03",
+   "end": "",
+   "time": "00:00",
+   "title": "Soju Wednesdays",
+   "venue": "Twenty Two",
+   "city": "Amsterdam",
+   "country": "NL",
+   "url": "https://partyflock.nl/party/498067:Soju-Wednesdays"
+  }
+ ]
+}

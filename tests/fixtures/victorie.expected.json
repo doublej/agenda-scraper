@@ -1,0 +1,31 @@
+{
+ "parser": "cards",
+ "args": {
+  "venue": "Victorie",
+  "origin": "https://www.podiumvictorie.nl/programma/",
+  "dates": "time"
+ },
+ "events": [
+  {
+   "date": "2026-09-02",
+   "time": "22:30",
+   "title": "Salsacafé",
+   "venue": "Victorie",
+   "url": "https://www.podiumvictorie.nl/programma/salsacafe/"
+  },
+  {
+   "date": "2026-09-03",
+   "time": "22:30",
+   "title": "Beach Boys’ Best",
+   "venue": "Victorie",
+   "url": "https://www.podiumvictorie.nl/programma/beach-boys-best/"
+  },
+  {
+   "date": "2026-09-03",
+   "time": "22:00",
+   "title": "WHAT’S NEW?!",
+   "venue": "Victorie",
+   "url": "https://www.podiumvictorie.nl/programma/whats-new-sep-26/"
+  }
+ ]
+}

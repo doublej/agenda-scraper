@@ -4,8 +4,9 @@
 
 ## What this is
 
-A Python CLI that scrapes eleven sources, deduplicates them, and writes the
-result as ~360 static JSON/TSV route files served by `python3 -m http.server` at
+A Python CLI that scrapes twenty-six sources, resolves them onto an entity model
+of venues, cities and artists, deduplicates them, and writes the result as ~600
+static JSON/TSV route files served by `python3 -m http.server` at
 <https://agenda.jurrejan.com>. A systemd timer runs `refresh.sh` four times a day.
 The same feed is served over MCP for clients that would rather call tools.
 
@@ -15,15 +16,23 @@ The same feed is served over MCP for clients that would rather call tools.
 src/agenda_scraper/
 ├── cli.py            # Click entry point — scrape / sources / reachability / mcp
 ├── config.py         # every path, URL and knob, all env-overridable
-├── publish.py        # dedupe → health assessment → route files → routes.json
 ├── reachability.py   # DNS → local server → public URL, in the order they break
 ├── mcp_server.py     # MCP tools search() / cities() / venues() over the feed
+├── entities/         # the leaf package: it imports nothing else of ours
+│   ├── slug.py       # slugify(): the one spelling rule, and every id is built on it
+│   ├── models.py     # TypedDicts + SCHEMA_VERSION + the field order
+│   ├── resolve.py    # venue/city alias tables → deterministic ids
+│   └── artists.py    # extract_artists(): heuristic lineup split + confidence
+├── publish/
+│   ├── feed.py       # annotate → dedupe → horizon → TSV → health assessment
+│   └── routes.py     # plan_routes → registries → route files → routes.json
 └── scrape/
     ├── __init__.py   # collect(): run sources, normalise city, survive failures
     ├── http.py       # one GET, one POST
     ├── browser.py    # real Chrome over CDP, for Cloudflare and infinite scroll
-    ├── parsers.py    # pure HTML → events (the only testable half)
-    └── sources.py    # the eleven sources and the SOURCES registry
+    ├── parsers.py    # pure HTML → events: JSON-LD, microdata, Tivoli, Paradiso
+    ├── cards.py      # a date next to a heading — the tier most NL venues leave
+    └── sources.py    # every source and the SOURCES registry
 ```
 
 The runtime path is `cli.scrape → scrape.collect → SOURCES[name]() → publish.write_out`.
@@ -34,26 +43,48 @@ published route files, locally or over HTTPS.
 
 - An event is a flat `dict[str, str]` (`agenda_scraper.Event`). A missing field is
   `""`, never absent — TSV columns and route files depend on it.
-- Cheapest tier first: API > JSON-LD > rendered browser. Never add a Chrome-based
-  scraper for a site that publishes schema.org.
+- Cheapest tier first: API > JSON-LD > microdata > `<time datetime>` cards >
+  rendered browser. Never add a Chrome-based scraper for a site that publishes
+  structured data. `loop/probe_sources.py` answers which tier a candidate has.
+- Read robots.txt before adding a source, with `RobotFileParser.parse()` on a body
+  fetched through our own `get()`. `RobotFileParser.read()` reports "disallowed"
+  for any host that 403s the fetch, which is four of the sites in `CARD_SOURCES`.
+  stager.co, which runs the ticketing for most Dutch podia and publishes lovely
+  JSON-LD, disallows crawling outright — hence the venue-by-venue card parsers.
 - One bad source must not kill a run. `collect()` catches per source and reports it;
   `assess()` turns "returned far less than usual" into a non-zero exit.
 - Filters are paths, not query strings — the static server ignores `?`. A new slice
   means a new route in `plan_routes()`.
-- `slugify()` in `publish.py` is the single spelling rule; `mcp_server` imports it
-  rather than repeating it, or city routes stop resolving.
+- `slugify()` in `entities/slug.py` is the single spelling rule, re-exported by
+  `publish`; `mcp_server` imports it rather than repeating it, or city routes stop
+  resolving. Every entity id is that slug of a canonical name — derived, never stored.
+- `entities/` imports nothing from `publish` or `scrape`. `publish` imports it to
+  resolve ids, so the arrow only ever points that way.
+- The nine legacy event keys keep their names and their TSV order; `venue_id`,
+  `city_id` and `artist_ids` were appended after them. New fields append, full stop.
+- `/venue/<slug>` stays keyed on the published label, not on `venue_id` — re-keying
+  it would rename live URLs.
 - Parsers stay pure and stay tested. Anything that needs the network belongs in
   `sources.py` or `browser.py`.
 - `uv` owns the lockfile. Add deps with `uv add <pkg>`, never edit `[project.dependencies]`.
 
 ## Common change patterns
 
-- **Add a source** → a function in `scrape/sources.py` returning `list[Event]`, an
-  entry in `SOURCES`, a city in `SOURCE_CITY` if the source never says where it is,
-  and a rank in `publish.SOURCE_RANK` (venues before aggregators).
+- **Add a source** → for a listing that is only a date next to a heading, one line
+  in `CARD_SOURCES` (`scrape/cards.py`) and a rank in `publish.SOURCE_RANK`;
+  otherwise a function in `scrape/sources.py` returning `list[Event]`, an entry in
+  `SOURCES`, a city in `SOURCE_CITY` if the source never says where it is, and the
+  rank (venues before aggregators). Then capture its golden fixture:
+  `uv run python loop/capture_fixture.py <name> <parser> <url> [venue] [dates]`.
 - **A scraper went quiet** → `uv run agenda-scraper scrape <name>` prints its rows;
   the parser, not the transport, is almost always what broke.
-- **Add a route** → `plan_routes()` in `publish.py`; `_prune()` removes stale files.
+- **Add a route** → `plan_routes()` in `publish/routes.py`; `_prune()` removes stale
+  files, and its subdirectory list needs the new prefix.
+- **A venue is spelt two ways** → one line in `VENUE_ALIAS` (`entities/resolve.py`),
+  keyed on the flattened slug. Check `_trim_venue` first: punctuation and room
+  suffixes are already handled.
+- **Probe a candidate source** → `uv run python loop/probe_sources.py <name>` reports
+  the cheapest tier that answers.
 - **Add an MCP tool** → a `@server.tool(description=...)` function in `mcp_server.py`.
 
 ## Verification
@@ -83,6 +114,9 @@ Recipe reference:
 - [data/llm.txt](data/llm.txt) — the feed's contract, written for the agents that consume it
 - `.claude/` — Claude Code settings, scaffold-update hook, library-freshness hook
 - `.quality.json` — loc / dir thresholds (single source of truth)
+- `schema/` — JSON Schema per entity plus the route envelope; `tests/test_entities.py`
+  validates a generated feed against them, and `AGENDA_VALIDATE_DIR=<dir>` points the
+  same walk at a real `scrape --all --out` run
 
 ### Shared agent journal
 

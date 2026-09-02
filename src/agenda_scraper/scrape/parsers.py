@@ -5,9 +5,10 @@ stable landmark (a JSON-LD block, a dated URL slug, a day heading), which
 survives the markup reshuffles that break selector-based scrapers.
 """
 
+import html as html_entities
 import json
 import re
-from datetime import date
+from datetime import date, timedelta
 
 from agenda_scraper import Event
 
@@ -19,13 +20,11 @@ MONTHS = {m: i + 1 for i, m in enumerate(MONTH_NAMES)}
 
 
 def unescape(s: str) -> str:
-    return (
-        s.replace("&amp;", "&")
-        .replace("&#8217;", "’")
-        .replace("&quot;", '"')
-        .replace("&#039;", "'")
-        .strip()
-    )
+    """Every HTML entity, not the four we happened to hit first."""
+    return html_entities.unescape(s).strip()
+
+
+_TAGS_ONLY = re.compile(r"<[^>]+>")
 
 
 def _as_dict(value: object) -> dict:
@@ -151,3 +150,55 @@ def parse_paradiso(html: str, start_year: int | None = None) -> list[Event]:
                 }
             )
     return out
+
+
+# Partyflock publishes schema.org too, as microdata rather than a JSON-LD block:
+# every row is an itemscope with startDate, url, name, venue and city on it.
+_MICRO_SPLIT = re.compile(
+    r'itemtype="https?://schema\.org/(?:Music|Dance|Social)?Event"'
+)
+_MICRO_PROP = r'itemprop="{}"[^>]*content="([^"]*)"'
+_MICRO_TEXT = re.compile(r'<span itemprop="name"[^>]*>(.*?)</span>', re.DOTALL)
+# The country is a nested Country itemscope; its alternateName is the ISO code.
+_MICRO_COUNTRY = re.compile(
+    r'itemprop="addressCountry".{0,200}?itemprop="alternateName"[^>]*content="([^"]*)"',
+    re.DOTALL,
+)
+
+
+def _overnight(start: str, closes: str) -> bool:
+    """A club night that ends at 04:59 is one night out, not a two-day festival."""
+    if not closes[:10] or closes[:10] <= start[:10]:
+        return False
+    next_day = date.fromisoformat(start[:10]) + timedelta(days=1)
+    return closes[:10] == str(next_day) and closes[11:16] < "12:00"
+
+
+def _micro(chunk: str, prop: str) -> str:
+    m = re.search(_MICRO_PROP.format(prop), chunk)
+    return unescape(m.group(1)) if m else ""
+
+
+def parse_microdata(html: str) -> list[Event]:
+    """schema.org Event as itemprop attributes instead of an ld+json block."""
+    out = []
+    for chunk in _MICRO_SPLIT.split(html)[1:]:
+        start = _micro(chunk, "startDate")
+        if not re.match(r"\d{4}-\d\d-\d\d", start):
+            continue
+        title = _MICRO_TEXT.search(chunk)
+        closes = _micro(chunk, "endDate")
+        end = "" if _overnight(start, closes) else closes[:10]
+        out.append(
+            {
+                "date": start[:10],
+                "end": end if end > start[:10] else "",
+                "time": start[11:16],
+                "title": unescape(_TAGS_ONLY.sub("", title.group(1))) if title else "",
+                "venue": _micro(chunk, "name"),
+                "city": _micro(chunk, "addressLocality"),
+                "country": (m.group(1) if (m := _MICRO_COUNTRY.search(chunk)) else ""),
+                "url": _micro(chunk, "url"),
+            }
+        )
+    return [e for e in out if e["title"]]

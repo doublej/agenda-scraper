@@ -17,8 +17,9 @@ dependencies = [
     { name = "websocket-client" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
+    { name = "jsonschema" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "ruff" },
@@ -28,12 +29,16 @@ dev = [
 requires-dist = [
     { name = "click", specifier = ">=8.4.0" },
     { name = "mcp", specifier = ">=1.20.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=2.0.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.16.0" },
     { name = "websocket-client", specifier = ">=1.9.0" },
 ]
-provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "jsonschema", specifier = ">=4.26.0" },
+    { name = "mypy", specifier = ">=1.17.0" },
+    { name = "pytest", specifier = ">=9.0.0" },
+    { name = "ruff", specifier = ">=0.16.0" },
+]
 
 [[package]]
 name = "annotated-types"

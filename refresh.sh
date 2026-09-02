@@ -9,9 +9,12 @@ export AGENDA_CHROME=${AGENDA_CHROME:-/usr/bin/google-chrome}
 # keeps being served with a 200.
 if [ -f .env ]; then . ./.env; fi     # `[ -f ] &&` would trip set -e
 
+# --no-dev because the dev group (ruff, mypy, pytest, jsonschema) is installed
+# by default now that it is a dependency group rather than an extra, and the
+# timer host has no use for it.
 rc=0
 xvfb-run -a --server-args="-screen 0 1400x1000x24" \
-    uv run --frozen agenda-scraper scrape --all --out "$PWD/data" || rc=$?
+    uv run --frozen --no-dev agenda-scraper scrape --all --out "$PWD/data" || rc=$?
 
 if [ -n "${KUMA_PUSH_URL:-}" ]; then
     # rc 1 means "ran, but a source looks wrong" — report it as down, with why.
