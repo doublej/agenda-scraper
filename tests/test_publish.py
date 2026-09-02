@@ -1,6 +1,15 @@
 """Dedupe, the horizon and the health assessment."""
 
-from agenda_scraper.publish import annotate, as_tsv, assess, current, dedupe, slugify
+from agenda_scraper.publish import (
+    VENUE_MIN_EVENTS,
+    annotate,
+    as_tsv,
+    assess,
+    current,
+    dedupe,
+    plan_routes,
+    slugify,
+)
 
 
 def test_slugify_flattens_a_city_into_a_url_segment():
@@ -97,3 +106,34 @@ def test_the_tsv_row_still_starts_with_the_nine_legacy_columns():
         "amsterdam",
         "bokoesam",
     ]
+
+
+def test_two_spellings_of_one_venue_plan_a_single_route():
+    """routes.json promised venue/mezz twice and only one file could exist.
+
+    "MEZZ" and "Mezz" are different labels and one slug, so both planned a
+    route, the second overwrote the first on disk, and the index advertised a
+    route count one higher than the number of files. Merging them also means
+    the per-venue minimum sees the combined count, which is what it meant.
+    """
+    rows = annotate(
+        [
+            {
+                "source": "x",
+                "date": f"2026-09-{i % 28 + 1:02d}",
+                "end": "",
+                "time": "",
+                "title": f"Act {i}",
+                "venue": "MEZZ" if i % 2 else "Mezz",
+                "city": "Breda",
+                "status": "",
+                "url": f"https://example.nl/{i}",
+            }
+            for i in range(VENUE_MIN_EVENTS + 2)
+        ]
+    )
+    routes = plan_routes(rows)
+    paths = [path for path, _, _ in routes]
+    assert len(paths) == len(set(paths)), "a route path is advertised twice"
+    venues = [(path, len(evs)) for path, _, evs in routes if path.startswith("venue/")]
+    assert venues == [("venue/mezz", VENUE_MIN_EVENTS + 2)]

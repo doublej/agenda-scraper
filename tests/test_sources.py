@@ -3,12 +3,13 @@
 Adding a source adds two files under tests/fixtures/ and nothing here — the
 list is the directory. Capture them with
 
-    uv run python loop/capture_fixture.py <name> <parser> <url> [venue]
+    uv run python loop/capture_fixture.py <name> <parser> <url> [venue] [dates] [links]
 
 which trims the page to the smallest snippet that still reproduces the parse.
 """
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -23,11 +24,20 @@ GOLDENS = sorted(FIXTURES.glob("*.expected.json"))
 
 PARSERS = {
     "cards": lambda html, a: parse_cards(
-        html, a.get("venue", ""), a.get("origin", ""), a.get("dates", "time")
+        html,
+        a.get("venue", ""),
+        a.get("origin", ""),
+        a.get("dates", "time"),
+        a.get("links", "before"),
     ),
     "jsonld": lambda html, a: parse_jsonld(html),
     "microdata": lambda html, a: parse_microdata(html),
 }
+
+
+def _words(text: str) -> set[str]:
+    """The words long enough to tie a URL slug to the title it came from."""
+    return {w for w in re.split(r"[^a-z0-9]+", text.lower()) if len(w) >= 4}
 
 
 def _golden(path: Path) -> tuple[str, dict, list]:
@@ -63,6 +73,35 @@ def test_a_parsed_event_carries_a_date_a_title_and_a_resolvable_venue(path):
         segments = [s for s in e["url"].split("/")[3:] if s]
         assert len(segments) < 2 or segments[0] != segments[1], e
     assert resolve_city(city)["id"] or name not in SOURCE_CITY
+
+
+@pytest.mark.parametrize("path", GOLDENS, ids=lambda p: p.name.split(".")[0])
+def test_an_event_links_to_itself_and_not_to_the_card_above_it(path):
+    """The defect a golden cannot catch, because a golden records it as correct.
+
+    Reading each card's <a> backwards is right for the eleven listings that
+    wrap the card in a link and wrong for the three that end the card with one:
+    there, every event got the previous card's URL. Neushoorn had 0 of 103
+    right, and the fixtures captured from that parser asserted the shifted URLs
+    were the expected output. `url` is one of the nine legacy keys, so this is
+    published, deduplicated and served. Compare the link against its own title
+    and against its neighbour's: the shift inverts the two.
+    """
+    name, _, got = _golden(path)
+    own = neighbour = 0
+    for i, e in enumerate(got):
+        link = _words(e["url"])
+        if link & _words(e["title"]):
+            own += 1
+        elif i and link & _words(got[i - 1]["title"]):
+            neighbour += 1
+    # Opaque links (Vera's ?p=152958, Neushoorn's stager ids) score 0 both ways
+    # and cannot be judged here; only a genuine inversion fails.
+    assert neighbour <= own, (
+        f"{name}: {neighbour} of {len(got)} links match the previous card's "
+        f"title and only {own} match their own — the card's <a> is being read "
+        f"from the wrong side (see LINKS_AFTER in scrape/cards.py)"
+    )
 
 
 @pytest.mark.parametrize("path", GOLDENS, ids=lambda p: p.name.split(".")[0])

@@ -66,12 +66,20 @@ published route files, locally or over HTTPS.
   it would rename live URLs.
 - Parsers stay pure and stay tested. Anything that needs the network belongs in
   `sources.py` or `browser.py`.
+- A golden fixture proves a parser has not *changed*, never that it is *right* —
+  captured from a buggy parser it asserts the bug. Every golden therefore has an
+  invariant test beside it that asks whether the output makes sense: that is what
+  `test_an_event_links_to_itself_and_not_to_the_card_above_it` is for. Add the
+  invariant, not just the capture.
 - `uv` owns the lockfile. Add deps with `uv add <pkg>`, never edit `[project.dependencies]`.
 
 ## Common change patterns
 
 - **Add a source** → for a listing that is only a date next to a heading, one line
-  in `CARD_SOURCES` (`scrape/cards.py`) and a rank in `publish.SOURCE_RANK`;
+  in `CARD_SOURCES` (`scrape/cards.py`) and a rank in `publish.SOURCE_RANK`. Check
+  which side the card keeps its link on: if the listing ends the card with a
+  "Tickets & info" link rather than wrapping the card in one, add it to
+  `LINKS_AFTER` or every event gets the *previous* card's URL;
   otherwise a function in `scrape/sources.py` returning `list[Event]`, an entry in
   `SOURCES`, a city in `SOURCE_CITY` if the source never says where it is, and the
   rank (venues before aggregators). Then capture its golden fixture:

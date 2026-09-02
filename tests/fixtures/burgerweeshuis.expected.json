@@ -3,29 +3,30 @@
  "args": {
   "venue": "Burgerweeshuis",
   "origin": "https://www.burgerweeshuis.nl/",
-  "dates": "dutch"
+  "dates": "dutch",
+  "links": "before"
  },
  "events": [
   {
-   "date": "2026-09-05",
+   "date": "2026-09-19",
    "time": "",
-   "title": "Entourage",
-   "venue": "Burgerweeshuis",
-   "url": "https://www.burgerweeshuis.nl/events/entourage-7"
-  },
-  {
-   "date": "2026-09-05",
-   "time": "",
-   "title": "Jouw",
+   "title": "Min Taka",
    "venue": "Burgerweeshuis",
    "url": "https://www.burgerweeshuis.nl/"
   },
   {
-   "date": "2026-09-09",
+   "date": "2026-09-19",
    "time": "",
-   "title": "Science Café: Woonvormen van morgen",
+   "title": "Popronde Deventer",
    "venue": "Burgerweeshuis",
-   "url": "https://www.burgerweeshuis.nl/events/science-cafe-woonvormen-van-morgen"
+   "url": "https://www.burgerweeshuis.nl/events/popronde-plilk"
+  },
+  {
+   "date": "2026-09-24",
+   "time": "",
+   "title": "Gob",
+   "venue": "Burgerweeshuis",
+   "url": "https://www.burgerweeshuis.nl/events/gob"
   }
  ]
 }

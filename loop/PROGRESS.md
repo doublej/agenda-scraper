@@ -51,9 +51,20 @@ loses two filler words is a fragment, not an act ("Hard Techno Rave" -> "Hard").
 Top names before those fixes were "De Oosterpoort" (39) and "Lunchconcert" (8);
 after, "Nona" (13), "Coldplay" (9), "Racoon", "Davina Michelle", "Snelle".
 
-Not caused by this run, recorded so nobody chases it: `data/index.html` and
-`data/events.json` were rewritten at 15:46 by a concurrent session. Left alone
-and never staged.
+Not caused by this run, recorded so nobody chases it: `data/index.html` was
+rewritten by a concurrent session working in the same checkout — its own
+session summary reports "clicking a source chip now isolates it on the first
+click", which is `fc2b171` word for word. **Correction to an earlier version of
+this line, which said "never staged":** that was wrong. Because that session
+shared the worktree while `feature/entity-model` was checked out, its two
+commits (`f3b116c`, `fc2b171`) landed *on this branch*, mid-sequence, and rode
+along in the merge. No content reached `main` that was not already there — it
+had committed the same work to `main` directly as `f311aea` / `eb104cf`, and
+`data/index.html` is byte-identical across all four. `data/events.json` is not
+tracked in either branch, so its rewrite was working-tree churn only.
+I did not author those two commits and did not stage them; they are in the
+history regardless, and this run's own rule of touching nothing under `./data/`
+except `llm.txt` / `llms.txt` held for every commit I made.
 
 ### Phase B boundary — evidence
 
@@ -182,14 +193,145 @@ pushed; `origin/main` and `origin/develop` are untouched.
 The `"matcher": "compact"` SessionStart hook that `loop/LAUNCH.md` asks to be
 removed after the run is gone (`c97b495`).
 
-### The skeptic passes did not report
+### The skeptic passes did not report *(superseded — see the section below)*
 
-The mission asks for one fresh-context skeptic per phase boundary. Both were
-spawned (`phase-a-skeptic`, `boundary-skeptic`) and both went idle without
-ever returning a verdict, after two and one follow-up prompts respectively.
-So the phase boundaries were **not** independently reviewed. What stands in
-their place is mechanical and re-runnable rather than adversarial: the schema
-walk with its negative control, the golden fixtures, the legacy key and TSV
-column assertions, and the five per-source criteria in BACKLOG.json. A human
-review of `entities/artists.py` in particular is still worth doing — it is the
-one heuristic here with no ground truth to check it against.
+At the time of writing this, both skeptics had gone idle without a verdict
+after two and one follow-up prompts, and I recorded the phase boundaries as
+unreviewed. **Both then reported.** They found a blocker I had missed, it was
+real, and it is fixed. The section "The skeptic passes, and what they changed"
+below is the accurate record; this paragraph is kept only so the sequence is
+readable. The merge described above happened *before* that fix, so it was not
+the last word — the run continued.
+
+## The skeptic passes, and what they changed
+
+Both skeptics eventually reported, long after I had recorded them as having
+gone idle without a verdict. The close-out section above says the phase
+boundaries went unreviewed; that is now wrong, and this section replaces it.
+Both returned **HOLDS WITH CAVEATS** on the criteria, and the boundary skeptic
+returned **FIX FIRST** overall on the strength of one blocker. It was right.
+
+### The blocker: every card's link pointed at the card above it
+
+`parse_cards` read the card's `<a>` backwards. Right for the eleven listings
+that wrap a card in its link, wrong for the three that end the card with a
+"Tickets & info" link — there each event took the *previous* card's URL.
+Neushoorn 0 of 103 correct, Melkweg 4 of 138, Annabel 1 of 22. `url` is one of
+the nine legacy keys, so this was published, deduplicated and served.
+
+I reproduced it before fixing it, then fetched all fourteen listings and
+measured four candidate rules over 1880 real rows:
+
+| rule | links matching their own event |
+|---|---|
+| last anchor before the card (what shipped) | 78.7% |
+| first anchor after the card | 28.4% |
+| nearest anchor either way | 66.8% |
+| first anchor in the card's own region | 59.3% |
+
+No positional rule wins: reading backwards scores 92-97% on eleven sites and
+0-5% on three, and reading forwards inverts that exactly. So it is per-site,
+like `dates` — `LINKS_AFTER` in `scrape/cards.py`. After: **91.4%**, and
+previous-card misattributions fall from **127 to 12**. The residue is Vera's
+opaque `?p=152958` links, which no title check can score; its 20 rows carry 20
+distinct URLs.
+
+**The part worth remembering.** The goldens had been captured from the buggy
+parser, so `test_a_saved_page_still_parses_to_its_golden` asserted the shifted
+URLs were correct. A golden proves a parser has not changed; it never proves it
+is right. Every fixture now has an invariant beside it —
+`test_an_event_links_to_itself_and_not_to_the_card_above_it` — and I verified it
+is not vacuous by regenerating the three goldens the old way and watching all
+three fail. `CLAUDE.md` carries the rule now.
+
+### Also fixed
+
+- A heading that is only a date *range* ("do 09 jul - zo 20 sep") named no act,
+  and `_fill_year` pushed it a year out — a phantom 2027 event in the feed and
+  in Melkweg's golden. Both sides must now be dates, so the real event
+  "Jimmy Carr - Laughs funny" survives the filter.
+- `routes.json` advertised `venue/mezz` twice over one file ("MEZZ" and "Mezz",
+  one slug): 649 routes promised, 648 on disk. Labels that share a slug are
+  merged into one route rather than re-keyed on `venue_id`, which would rename
+  live URLs.
+- `SOURCE_RANK` listed `spot` twice, so every venue after it sat one place off
+  its intended precedence. 26 names for 26 sources now, checked both ways.
+
+### Accepted, not fixed — with the reason
+
+- **`models.Event` is never used as an annotation.** Every module passes the
+  loose `agenda_scraper.Event` (`dict[str, str]`), so the TypedDict buys no
+  mypy coverage. Rather than delete an A2 deliverable or annotate late in the
+  run, it is now tied to the two declarations that *are* enforced: a test
+  asserts the TypedDict's field order, the TSV column order and
+  `schema/event.schema.json`'s `required` and `properties` are the same tuple.
+  Drift between them now fails.
+- **A6 said "via `plan_routes()`" and the three registries do not go through
+  it.** `/venues.json`, `/cities.json` and `/artists.json` are written by
+  `write_registries()`, called from `write_routes()`. The intent is met — all
+  three are published and indexed in `routes.json` — but the named mechanism is
+  not, because `plan_routes()` returns event slices and a registry is not a
+  slice of events. Logged here rather than forced.
+- **`pyproject.toml` moved the dev deps** from `[project.optional-dependencies]`
+  to `[dependency-groups]` and relaxed `mypy>=2.0.0` to `>=1.17.0`. Out of
+  A1-A8 and previously only justified in an inline comment. It was not
+  optional: `uv sync` does not install an extra, so ruff, mypy and pytest were
+  resolving to system binaries and `just typecheck` was red at HEAD for
+  reasons that had nothing to do with the code.
+- **Two of the thirteen "done" Phase B items (B1, B2) are sweeps that found
+  nothing**, so the backlog yields eleven sources and four more came from
+  outside it. Thirteen is right by the letter and eleven by the stricter
+  reading; both numbers are here so the reader can pick.
+- **Artist extraction still emits non-artists** — `artist/amsterdam-techno-sessions`,
+  `artist/antimatter`. Known ceiling of a heuristic with no ground truth; it is
+  the piece most worth a human read.
+
+### Evidence after the fixes — /tmp/boeking/fix1
+
+Clean `--all` run at the post-fix HEAD, exit 0, no source flaked:
+
+    json files on disk    : 652
+    routes advertised     : 649   distinct: 649
+    duplicate route paths : []                  # was venue/mezz twice
+    advertised but absent : 0                   # was 1
+    events                : 7816
+    venue labels          : 1280   (1253 distinct venue_ids)
+    cities                : 312
+    bad dates             : 0
+    wrong key set         : 0
+    non-string values     : 0
+    doubled url segments  : 0
+    phantom date headings : 0
+
+`AGENDA_VALIDATE_DIR=/tmp/boeking/fix1 uv run pytest tests/test_entities.py`
+passes 12 tests against the real run, and `just check` is green: 88 passed,
+2 skipped.
+
+URL attribution in the published feed, counted as "does the link share a word
+with its own event's title, or with the one above it" — old run (final4) versus
+this one:
+
+    source            OLD own/prev     NEW own/prev
+    annabel                1/7             11/0     <-- fixed
+    melkweg                4/55           130/1     <-- fixed
+    neushoorn              0/45            95/0     <-- fixed
+    013                  150/0            150/0
+    spot                 544/9            544/9
+    victorie              92/0             92/0
+    gebrdenobel          108/0            109/0
+    gigant                36/0             36/0
+    effenaar             113/0            113/0
+    patronaat            160/0            160/0
+    hedon                116/1            116/1
+    burgerweeshuis        46/0             46/0
+    vera                   1/1              1/1     (opaque ?p= links)
+    afaslive             102/0            102/0
+    TOTAL own           1473             1705
+
+Nothing regressed: every source other than the three is identical or better.
+Melkweg drops 138 events to 137 — that is the phantom date-range row.
+
+**The counts moved by one against the pre-fix run** (7815 -> 7816 events, 1281
+-> 1280 venue labels). Two scrapes an hour apart never agree exactly; the
+multiples against BASELINE.json are unchanged at x3.45 events and x2.64 venue
+labels, and the like-for-like venue caveat above (921, not 485) still stands.
