@@ -1,38 +1,240 @@
 {
-  "phase_a": [
-    {"id": "A1", "title": "baseline full run -> loop/BASELINE.json", "status": "todo"},
-    {"id": "A2", "title": "entities/ subpackage + models.py + SCHEMA_VERSION", "status": "todo"},
-    {"id": "A3", "title": "schema/*.schema.json + validation test", "status": "todo"},
-    {"id": "A4", "title": "resolve_venue / resolve_city / extract_artists", "status": "todo"},
-    {"id": "A5", "title": "wire ids into publish.py, legacy keys untouched", "status": "todo"},
-    {"id": "A6", "title": "registry routes venues/artists/cities + /artist/<slug>", "status": "todo"},
-    {"id": "A7", "title": "dedupe on (date, venue_id, title_key)", "status": "todo"},
-    {"id": "A8", "title": "update data/llm.txt and data/llms.txt", "status": "todo"}
-  ],
-  "phase_b": [
-    {"id": "B1", "target": "tribe sweep", "hint": "probe every candidate venue for /wp-json/tribe/events/v1/events — each hit is a tribe_events() registry entry, near-zero new code", "status": "todo"},
-    {"id": "B2", "target": "json-ld sweep", "hint": "probe the same candidates for schema.org Event blocks — each hit is a jsonld_page() entry", "status": "todo"},
-    {"id": "B3", "target": "stager platform", "hint": "check whether stager.nl ticketing exposes a per-venue JSON endpoint; many NL podia run on it, so one adapter could cover a dozen", "status": "todo"},
-    {"id": "B4", "target": "melkweg", "hint": "Amsterdam, large; check JSON-LD before rendering", "status": "todo"},
-    {"id": "B5", "target": "013", "hint": "Tilburg", "status": "todo"},
-    {"id": "B6", "target": "effenaar", "hint": "Eindhoven", "status": "todo"},
-    {"id": "B7", "target": "doornroosje", "hint": "Nijmegen", "status": "todo"},
-    {"id": "B8", "target": "patronaat", "hint": "Haarlem", "status": "todo"},
-    {"id": "B9", "target": "paard", "hint": "Den Haag", "status": "todo"},
-    {"id": "B10", "target": "vera", "hint": "Groningen", "status": "todo"},
-    {"id": "B11", "target": "simplon", "hint": "Groningen", "status": "todo"},
-    {"id": "B12", "target": "hedon", "hint": "Zwolle", "status": "todo"},
-    {"id": "B13", "target": "neushoorn", "hint": "Leeuwarden", "status": "todo"},
-    {"id": "B14", "target": "metropool", "hint": "Hengelo", "status": "todo"},
-    {"id": "B15", "target": "gebrdenobel", "hint": "Leiden", "status": "todo"},
-    {"id": "B16", "target": "bibelot", "hint": "Dordrecht", "status": "todo"},
-    {"id": "B17", "target": "volt", "hint": "Sittard", "status": "todo"},
-    {"id": "B18", "target": "oosterpoort-spot", "hint": "Groningen, Spot group", "status": "todo"},
-    {"id": "B19", "target": "tolhuistuin", "hint": "Amsterdam", "status": "todo"},
-    {"id": "B20", "target": "lantarenvenster", "hint": "Rotterdam, jazz", "status": "todo"},
-    {"id": "B21", "target": "bitterzoet", "hint": "Amsterdam", "status": "todo"},
-    {"id": "B22", "target": "burgerweeshuis", "hint": "Deventer", "status": "todo"},
-    {"id": "B23", "target": "uitagenda-amsterdam", "hint": "city aggregator; check licence terms before scraping", "status": "todo"},
-    {"id": "B24", "target": "partyflock", "hint": "nationwide dance agenda; check robots.txt first, it may disallow", "status": "todo"}
-  ]
+ "phase_a": [
+  {
+   "id": "A1",
+   "title": "baseline full run -> loop/BASELINE.json",
+   "status": "done"
+  },
+  {
+   "id": "A2",
+   "title": "entities/ subpackage + models.py + SCHEMA_VERSION",
+   "status": "done"
+  },
+  {
+   "id": "A3",
+   "title": "schema/*.schema.json + validation test",
+   "status": "done"
+  },
+  {
+   "id": "A4",
+   "title": "resolve_venue / resolve_city / extract_artists",
+   "status": "done"
+  },
+  {
+   "id": "A5",
+   "title": "wire ids into publish.py, legacy keys untouched",
+   "status": "done"
+  },
+  {
+   "id": "A6",
+   "title": "registry routes venues/artists/cities + /artist/<slug>",
+   "status": "done"
+  },
+  {
+   "id": "A7",
+   "title": "dedupe on (date, venue_id, title_key)",
+   "status": "done"
+  },
+  {
+   "id": "A8",
+   "title": "update data/llm.txt and data/llms.txt",
+   "status": "done"
+  }
+ ],
+ "phase_b": [
+  {
+   "id": "B1",
+   "target": "tribe sweep",
+   "hint": "probe every candidate venue for /wp-json/tribe/events/v1/events — each hit is a tribe_events() registry entry, near-zero new code",
+   "status": "done",
+   "note": "sweep run over 45 candidate sites: zero hits. No Dutch venue in the list runs The Events Calendar; /wp-json/tribe/events/v1/events 404s on every one. Musicon and dB's remain the only two."
+  },
+  {
+   "id": "B2",
+   "target": "json-ld sweep",
+   "hint": "probe the same candidates for schema.org Event blocks — each hit is a jsonld_page() entry",
+   "status": "done",
+   "note": "sweep run over 45 sites and 38 real agenda paths: zero schema.org Event blocks outside the two aggregators. The sweep did find the platform they share, which is B3."
+  },
+  {
+   "id": "B3",
+   "target": "stager platform",
+   "hint": "check whether stager.nl ticketing exposes a per-venue JSON endpoint; many NL podia run on it, so one adapter could cover a dozen",
+   "status": "blocked",
+   "note": "stager.co shops publish the whole programme as one clean JSON-LD block, and https://<slug>.stager.co/robots.txt is 'User-agent: * / Disallow: /' with only Googlebot and facebookexternalhit exempt. Tried: the shop page (disallowed), the venue's own /wp-json/wp/v2/<event type> (the only date is the post's publish date, ACF is empty over REST), and an iCal sweep (no venue serves one). The venues' own pages are what got scraped instead, one by one."
+  },
+  {
+   "id": "B4",
+   "target": "melkweg",
+   "hint": "Amsterdam, large; check JSON-LD before rendering",
+   "status": "done",
+   "note": "melkweg, 138 events, cards/dutch"
+  },
+  {
+   "id": "B5",
+   "target": "013",
+   "hint": "Tilburg",
+   "status": "done",
+   "note": "013, 164 events, cards/time"
+  },
+  {
+   "id": "B6",
+   "target": "effenaar",
+   "hint": "Eindhoven",
+   "status": "done",
+   "note": "effenaar, 132 events, cards/dutch"
+  },
+  {
+   "id": "B7",
+   "target": "doornroosje",
+   "hint": "Nijmegen",
+   "status": "blocked",
+   "note": "doornroosje.nl renders its agenda client-side: 0 schema.org, 0 microdata, 0 <time datetime>, 0 dated slugs, no tribe/wp/iCal endpoint. Only Chrome would reach it."
+  },
+  {
+   "id": "B8",
+   "target": "patronaat",
+   "hint": "Haarlem",
+   "status": "done",
+   "note": "patronaat, 166 events, cards/dutch; robots.txt asks 10s crawl-delay, we make one request a run"
+  },
+  {
+   "id": "B9",
+   "target": "paard",
+   "hint": "Den Haag",
+   "status": "blocked",
+   "note": "paard.nl, same client-rendered listing as doornroosje"
+  },
+  {
+   "id": "B10",
+   "target": "vera",
+   "hint": "Groningen",
+   "status": "done",
+   "note": "vera, 20 events, cards/dutch, off the venue's own page rather than its stager shop"
+  },
+  {
+   "id": "B11",
+   "target": "simplon",
+   "hint": "Groningen",
+   "status": "blocked",
+   "note": "simplon.nl renders client-side; its stager shop has 50 events and is disallowed"
+  },
+  {
+   "id": "B12",
+   "target": "hedon",
+   "hint": "Zwolle",
+   "status": "done",
+   "note": "hedon, 127 events, cards/dutch"
+  },
+  {
+   "id": "B13",
+   "target": "neushoorn",
+   "hint": "Leeuwarden",
+   "status": "done",
+   "note": "neushoorn, 103 events, cards/dutch"
+  },
+  {
+   "id": "B14",
+   "target": "metropool",
+   "hint": "Hengelo",
+   "status": "blocked",
+   "note": "metropool.nl yields 10 dated cards, under the 20 bar; the listing paginates client-side"
+  },
+  {
+   "id": "B15",
+   "target": "gebrdenobel",
+   "hint": "Leiden",
+   "status": "done",
+   "note": "gebrdenobel, 111 events, cards/slug — its <time datetime> is the post's publish date, so the date comes off the URL"
+  },
+  {
+   "id": "B16",
+   "target": "bibelot",
+   "hint": "Dordrecht",
+   "status": "blocked",
+   "note": "bibelot.net is behind Cloudflare and renders client-side"
+  },
+  {
+   "id": "B17",
+   "target": "volt",
+   "hint": "Sittard",
+   "status": "blocked",
+   "note": "poppodiumvolt.nl paginates client-side: 1 card in the served HTML"
+  },
+  {
+   "id": "B18",
+   "target": "oosterpoort-spot",
+   "hint": "Groningen, Spot group",
+   "status": "done",
+   "note": "spot, 616 events across De Oosterpoort, Stadsschouwburg and Machinefabriek — the cards name their own room"
+  },
+  {
+   "id": "B19",
+   "target": "tolhuistuin",
+   "hint": "Amsterdam",
+   "status": "blocked",
+   "note": "tolhuistuin.nl: TLS certificate verification fails on www, /programma/ 404s on the apex"
+  },
+  {
+   "id": "B20",
+   "target": "lantarenvenster",
+   "hint": "Rotterdam, jazz",
+   "status": "blocked",
+   "note": "lantarenvenster.nl /programma/ 404s; the root has 6 dated cards, under the bar"
+  },
+  {
+   "id": "B21",
+   "target": "bitterzoet",
+   "hint": "Amsterdam",
+   "status": "blocked",
+   "note": "bitterzoet.com renders client-side; its /wp-json/wp/v2/event has no event date"
+  },
+  {
+   "id": "B22",
+   "target": "burgerweeshuis",
+   "hint": "Deventer",
+   "status": "done",
+   "note": "burgerweeshuis, 49 events, cards/dutch"
+  },
+  {
+   "id": "B23",
+   "target": "uitagenda-amsterdam",
+   "hint": "city aggregator; check licence terms before scraping",
+   "status": "blocked",
+   "note": "iamsterdam.com/uit/agenda serves no schema.org, no microdata and no dated cards; robots allows only ?page= URLs"
+  },
+  {
+   "id": "B24",
+   "target": "partyflock",
+   "hint": "nationwide dance agenda; check robots.txt first, it may disallow",
+   "status": "done",
+   "note": "partyflock, ~1600 NL events over three month pages, ~500 distinct venues — schema.org as microdata"
+  }
+ ],
+ "extra_sources_not_in_the_backlog": [
+  {
+   "id": "X1",
+   "target": "victorie",
+   "status": "done",
+   "note": "Alkmaar, 100 events — same parser, cost one line"
+  },
+  {
+   "id": "X2",
+   "target": "gigant",
+   "status": "done",
+   "note": "Apeldoorn, 39 events"
+  },
+  {
+   "id": "X3",
+   "target": "annabel",
+   "status": "done",
+   "note": "Rotterdam, 22 events"
+  },
+  {
+   "id": "X4",
+   "target": "afaslive",
+   "status": "done",
+   "note": "Amsterdam, 110 events"
+  }
+ ]
 }

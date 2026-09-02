@@ -4,8 +4,8 @@
 
 ## What this is
 
-A Python CLI that scrapes eleven sources, resolves them onto an entity model of
-venues, cities and artists, deduplicates them, and writes the result as ~385
+A Python CLI that scrapes twenty-six sources, resolves them onto an entity model
+of venues, cities and artists, deduplicates them, and writes the result as ~600
 static JSON/TSV route files served by `python3 -m http.server` at
 <https://agenda.jurrejan.com>. A systemd timer runs `refresh.sh` four times a day.
 The same feed is served over MCP for clients that would rather call tools.
@@ -30,8 +30,9 @@ src/agenda_scraper/
     ├── __init__.py   # collect(): run sources, normalise city, survive failures
     ├── http.py       # one GET, one POST
     ├── browser.py    # real Chrome over CDP, for Cloudflare and infinite scroll
-    ├── parsers.py    # pure HTML → events (the only testable half)
-    └── sources.py    # the eleven sources and the SOURCES registry
+    ├── parsers.py    # pure HTML → events: JSON-LD, microdata, Tivoli, Paradiso
+    ├── cards.py      # a date next to a heading — the tier most NL venues leave
+    └── sources.py    # every source and the SOURCES registry
 ```
 
 The runtime path is `cli.scrape → scrape.collect → SOURCES[name]() → publish.write_out`.
@@ -42,8 +43,14 @@ published route files, locally or over HTTPS.
 
 - An event is a flat `dict[str, str]` (`agenda_scraper.Event`). A missing field is
   `""`, never absent — TSV columns and route files depend on it.
-- Cheapest tier first: API > JSON-LD > rendered browser. Never add a Chrome-based
-  scraper for a site that publishes schema.org.
+- Cheapest tier first: API > JSON-LD > microdata > `<time datetime>` cards >
+  rendered browser. Never add a Chrome-based scraper for a site that publishes
+  structured data. `loop/probe_sources.py` answers which tier a candidate has.
+- Read robots.txt before adding a source, with `RobotFileParser.parse()` on a body
+  fetched through our own `get()`. `RobotFileParser.read()` reports "disallowed"
+  for any host that 403s the fetch, which is four of the sites in `CARD_SOURCES`.
+  stager.co, which runs the ticketing for most Dutch podia and publishes lovely
+  JSON-LD, disallows crawling outright — hence the venue-by-venue card parsers.
 - One bad source must not kill a run. `collect()` catches per source and reports it;
   `assess()` turns "returned far less than usual" into a non-zero exit.
 - Filters are paths, not query strings — the static server ignores `?`. A new slice
@@ -63,9 +70,12 @@ published route files, locally or over HTTPS.
 
 ## Common change patterns
 
-- **Add a source** → a function in `scrape/sources.py` returning `list[Event]`, an
-  entry in `SOURCES`, a city in `SOURCE_CITY` if the source never says where it is,
-  and a rank in `publish.SOURCE_RANK` (venues before aggregators).
+- **Add a source** → for a listing that is only a date next to a heading, one line
+  in `CARD_SOURCES` (`scrape/cards.py`) and a rank in `publish.SOURCE_RANK`;
+  otherwise a function in `scrape/sources.py` returning `list[Event]`, an entry in
+  `SOURCES`, a city in `SOURCE_CITY` if the source never says where it is, and the
+  rank (venues before aggregators). Then capture its golden fixture:
+  `uv run python loop/capture_fixture.py <name> <parser> <url> [venue] [dates]`.
 - **A scraper went quiet** → `uv run agenda-scraper scrape <name>` prints its rows;
   the parser, not the transport, is almost always what broke.
 - **Add a route** → `plan_routes()` in `publish/routes.py`; `_prune()` removes stale

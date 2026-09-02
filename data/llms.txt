@@ -1,7 +1,7 @@
 # agenda.jurrejan.com — Dutch venue agenda feed
 
 Concerts, club nights and festivals across the Netherlands, scraped four times
-a day from two nationwide aggregators plus a handful of venues, merged into one
+a day from three nationwide aggregators plus two dozen venues, merged into one
 sorted list and published as static files. No API key, no rate limit, no
 pagination. Pick the narrowest route below and read the whole file.
 
@@ -128,6 +128,9 @@ the false positives stop.
 
     ra-nl          Resident Advisor, area "Netherlands All" — club and dance
                    nights at every venue in the country, 45 days ahead.
+    partyflock     partyflock.nl — nationwide dance agenda, three months ahead.
+                   The widest venue coverage in the feed by a long way: bars,
+                   boats and one-off locations no venue scraper reaches.
     podiuminfo     podiuminfo.nl — every announced concert in NL, 45 days ahead.
     festivalinfo   festivalinfo.nl — every Dutch festival, 120 days ahead.
     tivoli         TivoliVredenburg, Utrecht      (~2.5 months, scroll-limited)
@@ -138,11 +141,27 @@ the false positives stop.
     muziekgieterij Muziekgieterij, Maastricht
     musicon        Musicon, Den Haag
     dbstudio       dB's, Utrecht
+    013            013, Tilburg
+    spot           SPOT Groningen — De Oosterpoort, Stadsschouwburg and the
+                   Machinefabriek, published as three separate venues.
+    melkweg        Melkweg, Amsterdam
+    effenaar       Effenaar, Eindhoven
+    patronaat      Patronaat, Haarlem
+    afaslive       AFAS Live, Amsterdam
+    hedon          Hedon, Zwolle
+    neushoorn      Neushoorn, Leeuwarden
+    gebrdenobel    Gebr. de Nobel, Leiden
+    victorie       Podium Victorie, Alkmaar
+    burgerweeshuis Burgerweeshuis, Deventer
+    gigant         Gigant, Apeldoorn
+    annabel        Annabel, Rotterdam
+    vera           Vera, Groningen
 
-The venue scrapers exist for what the aggregators drop: ticket status and a
-link to the venue's own page. Everything else in the country arrives through
-ra-nl, podiuminfo and festivalinfo. Belgian listings on the two aggregators are
-filtered out.
+The venue scrapers exist for what the aggregators drop: ticket status, a link
+to the venue's own page, and a horizon that runs past the aggregators' 45 days.
+Everything else in the country arrives through ra-nl, partyflock, podiuminfo
+and festivalinfo. Belgian, German and other non-Dutch listings are filtered out
+of all four.
 
 ## Health
 
