@@ -45,6 +45,7 @@ SOURCE_RANK = (
     "vera",
     "afaslive",
     "ra-nl",
+    "partyflock",
     "podiuminfo",
     "festivalinfo",
 )

@@ -33,6 +33,7 @@ from agenda_scraper.scrape.cards import CARD_SOURCES, parse_cards
 from agenda_scraper.scrape.http import get, post_json
 from agenda_scraper.scrape.parsers import (
     parse_jsonld,
+    parse_microdata,
     parse_paradiso,
     parse_tivoli,
     unescape,
@@ -187,6 +188,28 @@ def cards(url: str, venue: str = "", dates: str = "time") -> list[Event]:
     return parse_cards(get(url), venue, url, dates)
 
 
+def partyflock(months: int = 3) -> list[Event]:
+    """Partyflock's month pages — schema.org as microdata, Dutch rows only.
+
+    A nationwide dance agenda, so it reaches the bars, boats and one-off
+    locations no venue scraper covers: three month pages carry more distinct
+    venues than every other source in this file put together. robots.txt allows
+    it and asks for no delay; it gets one request a page, a second apart.
+    """
+    today = str(date.today())
+    year, month = date.today().year, date.today().month
+    seen: set[str] = set()
+    out: list[Event] = []
+    for _ in range(months):
+        for e in parse_microdata(get(f"https://partyflock.nl/agenda/{year}/{month}")):
+            if e["country"] == "NL" and e["date"] >= today and e["url"] not in seen:
+                seen.add(e["url"])
+                out.append(e)
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+        time.sleep(1)
+    return out
+
+
 def jsonld_page(url: str, venue: str) -> list[Event]:
     """A venue that publishes its whole agenda as JSON-LD on one page."""
     return [{**e, "venue": e["venue"] or venue} for e in parse_jsonld(get(url))]
@@ -225,6 +248,7 @@ def enrich_from_detail(
 SOURCES: dict[str, Callable[[], list[Event]]] = {
     # nationwide
     "ra-nl": ra_events,
+    "partyflock": partyflock,
     "podiuminfo": lambda: paged_jsonld(
         "https://www.podiuminfo.nl/concertagenda/?page={page}", days=45
     ),

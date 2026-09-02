@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from agenda_scraper.scrape.cards import parse_cards
 from agenda_scraper.scrape.http import get
-from agenda_scraper.scrape.parsers import parse_jsonld
+from agenda_scraper.scrape.parsers import parse_jsonld, parse_microdata
 
 FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 CARDS = 3
@@ -27,6 +27,7 @@ MARKS = {
     "time": r"<time[^>]*\bdatetime=",
     "dutch": r"\b\d{1,2}\s+(?:jan|feb|mrt|maa|apr|mei|jun|jul|aug|sep|okt|nov|dec)",
     "slug": r'href="[^"]*-\d{1,2}-(?:jan|feb|mrt|apr|mei|jun|jul|aug|sep|okt|nov|dec)',
+    "microdata": r'itemtype="https?://schema\.org/(?:Music|Dance|Social)?Event"',
 }
 
 
@@ -38,6 +39,9 @@ def trim(html: str, parser: str, dates: str, venue: str, url: str) -> str:
     nothing. So walk the dates and keep the first window that actually yields
     cards — a fixture that parses to zero events tests nothing.
     """
+    if parser == "microdata":
+        marks = [m.start() for m in re.finditer(MARKS["microdata"], html)]
+        return html[marks[0] : marks[CARDS + 1]] if len(marks) > CARDS else html
     if parser == "jsonld":
         blocks = re.findall(
             r'<script type="application/ld\+json"[^>]*>.*?</script>', html, re.DOTALL
@@ -59,11 +63,11 @@ def main() -> None:
     dates = sys.argv[5] if len(sys.argv) > 5 else "time"
     snippet = trim(get(url), parser, dates, venue, url)
     args = {"venue": venue, "origin": url, "dates": dates}
-    events = (
-        parse_cards(snippet, venue, url, dates)
-        if parser == "cards"
-        else parse_jsonld(snippet)
-    )
+    events = {
+        "cards": lambda: parse_cards(snippet, venue, url, dates),
+        "microdata": lambda: parse_microdata(snippet),
+        "jsonld": lambda: parse_jsonld(snippet),
+    }[parser]()
     FIXTURES.mkdir(parents=True, exist_ok=True)
     (FIXTURES / f"{name}.html").write_text(snippet, encoding="utf8")
     (FIXTURES / f"{name}.expected.json").write_text(

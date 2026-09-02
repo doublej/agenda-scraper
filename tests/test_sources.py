@@ -15,7 +15,7 @@ import pytest
 
 from agenda_scraper.entities import resolve_city, resolve_venue
 from agenda_scraper.scrape.cards import parse_cards
-from agenda_scraper.scrape.parsers import parse_jsonld
+from agenda_scraper.scrape.parsers import parse_jsonld, parse_microdata
 from agenda_scraper.scrape.sources import SOURCE_CITY, SOURCES
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -26,6 +26,7 @@ PARSERS = {
         html, a.get("venue", ""), a.get("origin", ""), a.get("dates", "time")
     ),
     "jsonld": lambda html, a: parse_jsonld(html),
+    "microdata": lambda html, a: parse_microdata(html),
 }
 
 
