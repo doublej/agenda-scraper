@@ -1,0 +1,14 @@
+# The published feed: generated four times a day by agenda-scraper.timer.
+# index.html, llm.txt and llms.txt are hand-written and live in the same dir.
+/data/*
+!/data/index.html
+!/data/llm.txt
+!/data/llms.txt
+
+# Chrome's persistent profile lives here — it holds the cookies (including the
+# Cloudflare clearance) that let the Tivoli scraper through. Never commit it.
+/.logs/
+
+__pycache__/
+*.pyc
+.env

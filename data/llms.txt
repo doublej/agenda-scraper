@@ -1,0 +1,137 @@
+# agenda.jurrejan.com — Dutch venue agenda feed
+
+Concerts, club nights and festivals across the Netherlands, scraped four times
+a day from two nationwide aggregators plus a handful of venues, merged into one
+sorted list and published as static files. No API key, no rate limit, no
+pagination. Pick the narrowest route below and read the whole file.
+
+## Routes
+
+The server ignores query strings, so every filter is a path. `routes.json`
+lists all of them with live counts — read it first when you do not already know
+the slug you want.
+
+  /routes.json                  index of every route, with counts
+  /health.json                  freshness + per-source health, ~2 KB
+  /events.json  /events.tsv     everything (also /all.json, /all.tsv)
+  /today.json   /week.json      next 1 / 7 days, whole country
+  /month.json                   next 31 days, whole country
+  /city/<slug>.json             one city, full horizon — e.g. /city/amsterdam.json
+  /city/<slug>/week.json        one city, next 7 days (cities with 20+ events)
+  /source/<name>.json           one scraper, e.g. /source/festivalinfo.json
+  /venue/<slug>.json            one venue with 10+ upcoming events
+  /llm.txt  /llms.txt           this file
+
+Every route exists as `.json` and `.tsv`. City and venue slugs are lowercase
+ASCII with dashes ("Den Haag" -> `den-haag`); `routes.json` has the exact list.
+
+For a small context, prefer `/city/<slug>/week.json` (tens of events) over
+`/events.json` (thousands).
+
+## Fetching
+
+Refreshed at 04:17, 10:17, 16:17 and 22:17 Europe/Amsterdam, plus up to 10 min
+jitter. `Cache-Control: max-age=900`, `Last-Modified` set, `304` on
+`If-Modified-Since`, `Access-Control-Allow-Origin: *`. Do not poll faster than
+every 15 minutes. Writes are atomic: a `200` is never a partial file.
+
+## Schema
+
+Route files share one envelope:
+
+    {
+      "generated_at": "2026-08-30T16:17:04+0200",   # ISO 8601, Europe/Amsterdam
+      "healthy": true,                              # false = see problems
+      "problems": [],
+      "route": "city/amsterdam",                    # absent in events.json
+      "count": 412,
+      "sources": {...},                             # events.json / health.json only
+      "events": [ ... ]
+    }
+
+Each event:
+
+    date    "2026-09-12"   local start date, YYYY-MM-DD. Always present.
+    end     ""             last day of a multi-day festival; "" for single-day.
+    time    "20:30"        local start, HH:MM. "" when the source omits it.
+    title   "Bokoesam"     as published; Dutch or English depending on source.
+    venue   "Paradiso"     as published; a label, not an identifier.
+    city    "Amsterdam"    Dutch spelling. "" when the source does not say.
+    status  ""             "" | "Sold out" | "Waiting list" | "Cancelled" | "Postponed"
+    url     "https://..."  detail/ticket page at the venue or the aggregator.
+    source  "paradiso"     which scraper produced the row.
+
+All eight keys are on every event; absence is `""`, never `null`, never a
+missing key. Sorted by `(date, time, title)`. Nothing that has already finished
+is published — an event with a past `date` is a festival still running, which
+is what `end` is for.
+
+`.tsv` is headerless, one event per line, same order, fields never containing
+tabs or newlines:
+
+    source <TAB> date <TAB> end <TAB> time <TAB> title <TAB> venue <TAB> city <TAB> status <TAB> url
+
+## Sources
+
+    ra-nl          Resident Advisor, area "Netherlands All" — club and dance
+                   nights at every venue in the country, 45 days ahead.
+    podiuminfo     podiuminfo.nl — every announced concert in NL, 45 days ahead.
+    festivalinfo   festivalinfo.nl — every Dutch festival, 120 days ahead.
+    tivoli         TivoliVredenburg, Utrecht      (~2.5 months, scroll-limited)
+    paradiso       Paradiso, Amsterdam            (~3 months, scroll-limited)
+    dehelling      De Helling, Utrecht
+    ekko           EKKO, Utrecht
+    rotown         Rotown, Rotterdam
+    muziekgieterij Muziekgieterij, Maastricht
+    musicon        Musicon, Den Haag
+    dbstudio       dB's, Utrecht
+
+The venue scrapers exist for what the aggregators drop: ticket status and a
+link to the venue's own page. Everything else in the country arrives through
+ra-nl, podiuminfo and festivalinfo. Belgian listings on the two aggregators are
+filtered out.
+
+## Health
+
+Trust the data only when `healthy` is `true`. When it is `false`, `problems`
+names each broken source: one that threw, one that returned nothing, or one
+that returned less than half its recent norm (a silent parser breakage after a
+site redesign). Events from the other sources in that same run are still good —
+check `sources[<name>].ok`. A `generated_at` more than ~7 hours old means the
+refresh timer itself stopped.
+
+## Caveats
+
+- Duplicates are already removed: when an aggregator and the venue itself
+  report the same day + city + title, the venue's row wins. Different titles
+  for the same night (promoters brand club nights differently per platform)
+  survive as two rows — match loosely if exactness matters.
+- Coverage differs by horizon, and this is the feed's sharpest edge. The
+  aggregators are capped at 45 days (120 for festivals). The venue scrapers
+  reach as far as the venue itself publishes on one page: Rotown 13 months,
+  Muziekgieterij 9, dB's and De Helling 8, Musicon 5, EKKO 4. The two rendered
+  ones stop where their infinite scroll stops — TivoliVredenburg ~2.5 months,
+  Paradiso ~3 — and that cut-off moves between runs. So the feed is dense for
+  roughly six weeks, thins out over the two months after that, and past ~4
+  months only a handful of venues are represented. A quiet January is a
+  coverage artefact, not an empty agenda.
+- `city` is empty for RA events outside its six Dutch city areas.
+- `venue` is a label. RA rows carry whatever room the night is held in — a bar,
+  a studio, a boat.
+- `status` reflects the last scrape, up to 6 hours old, and only the venue
+  scrapers set it. Confirm on `url` before telling anyone a show is sold out.
+
+## Recipes
+
+    # what is on in Utrecht this week
+    curl -s https://agenda.jurrejan.com/city/utrecht/week.json | jq -r '
+      .events[] | "\(.date) \(.time) \(.title) — \(.venue)"'
+
+    # every festival still to come
+    curl -s https://agenda.jurrejan.com/source/festivalinfo.tsv | cut -f2,5,7
+
+    # is the feed trustworthy right now?
+    curl -s https://agenda.jurrejan.com/health.json | jq '{healthy, generated_at, count}'
+
+    # which routes exist
+    curl -s https://agenda.jurrejan.com/routes.json | jq -r '.routes[] | "\(.count)\t\(.json)"'
