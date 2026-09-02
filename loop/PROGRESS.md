@@ -163,3 +163,33 @@ Worth naming, because two of them shipped in a commit before they were found:
 - The baseline run's podiuminfo 0 was transient, not a breakage, and it made
   every later comparison ambiguous. A baseline taken while a source is down is
   worth re-taking.
+
+## Close-out
+
+`just check` green at the merged tip: 71 passed, 2 skipped. The two skips are
+the live-feed test (`AGENDA_LIVE=1`) and the schema walk over a real run
+(`AGENDA_VALIDATE_DIR=<dir>`); the latter was run separately against
+`/tmp/boeking/final4` and validated 651 files with 0 problems, against a
+negative control that produces 12 errors.
+
+Merged locally, no push, per the flow: `feature/entity-model` → `develop` →
+`main`, both `--no-ff`. `git diff develop main` is empty. The only overlapping
+file with the work another session committed straight onto main was
+`data/index.html`, and both sides held byte-identical content
+(`b242d117bf1f1f71687d84302b71fca1`), so the merge was clean. Nothing was
+pushed; `origin/main` and `origin/develop` are untouched.
+
+The `"matcher": "compact"` SessionStart hook that `loop/LAUNCH.md` asks to be
+removed after the run is gone (`c97b495`).
+
+### The skeptic passes did not report
+
+The mission asks for one fresh-context skeptic per phase boundary. Both were
+spawned (`phase-a-skeptic`, `boundary-skeptic`) and both went idle without
+ever returning a verdict, after two and one follow-up prompts respectively.
+So the phase boundaries were **not** independently reviewed. What stands in
+their place is mechanical and re-runnable rather than adversarial: the schema
+walk with its negative control, the golden fixtures, the legacy key and TSV
+column assertions, and the five per-source criteria in BACKLOG.json. A human
+review of `entities/artists.py` in particular is still worth doing — it is the
+one heuristic here with no ground truth to check it against.
