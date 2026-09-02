@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          { "type": "command", "command": "python3 .claude/scripts/check_template_update.py" },
+          { "type": "command", "command": "python3 .claude/scripts/check_library_freshness.py" }
+        ]
+      },
+      {
+        "matcher": "resume",
+        "hooks": [
+          { "type": "command", "command": "python3 .claude/scripts/check_template_update.py" },
+          { "type": "command", "command": "python3 .claude/scripts/check_library_freshness.py" }
+        ]
+      }
+    ]
+  }
+}

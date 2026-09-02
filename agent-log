@@ -1,0 +1,3 @@
+#!/bin/sh
+# Shipped by project-atlas — https://github.com/doublej/project-atlas
+exec atlas agent-log "$@"

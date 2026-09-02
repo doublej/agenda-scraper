@@ -123,23 +123,29 @@ refresh timer itself stopped.
 
 ## MCP
 
-The same feed as an MCP server — stdio, python3, stdlib only, no install step —
+The same feed as an MCP server — stdio, one uv command, no checkout required —
 for clients that would rather call tools than fetch URLs:
 
     {
       "mcpServers": {
         "uitagenda": {
           "type": "stdio",
-          "command": "python3",
-          "args": ["/home/jurrejan/development/agenda-scraper/system/mcp/uitagenda_mcp.py"],
-          "env": {"AGENDA_DATA_DIR": "/home/jurrejan/development/agenda-scraper/data"}
+          "command": "uvx",
+          "args": ["--from", "git+https://github.com/doublej/agenda-scraper",
+                   "agenda-scraper", "mcp"]
         }
       }
     }
 
-Source: https://github.com/doublej/agenda-scraper. Drop `AGENDA_DATA_DIR` when
-the checkout is not on the machine running the server — it then reads this site
-over HTTPS instead, same documents either way.
+With a checkout on the same machine, point at it instead and the server reads
+`data/` off the disk rather than this site — same documents either way:
+
+    "command": "uv",
+    "args": ["run", "--directory", "/home/jurrejan/development/agenda-scraper",
+             "agenda-scraper", "mcp"]
+
+Source: https://github.com/doublej/agenda-scraper. `AGENDA_DATA_DIR` and
+`AGENDA_BASE_URL` override where the server looks.
 
     search(query, city, venue, days=14, from_date, to_date, limit=20)
         Events matching every filter given, soonest first. Words in `query` must

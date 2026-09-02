@@ -1,0 +1,120 @@
+# agenda-scraper
+
+> Concerts, club nights and festivals across the Netherlands, scraped and republished as static JSON/TSV
+
+## What this is
+
+A Python CLI that scrapes eleven sources, deduplicates them, and writes the
+result as ~360 static JSON/TSV route files served by `python3 -m http.server` at
+<https://agenda.jurrejan.com>. A systemd timer runs `refresh.sh` four times a day.
+The same feed is served over MCP for clients that would rather call tools.
+
+## Mental model
+
+```
+src/agenda_scraper/
+├── cli.py            # Click entry point — scrape / sources / reachability / mcp
+├── config.py         # every path, URL and knob, all env-overridable
+├── publish.py        # dedupe → health assessment → route files → routes.json
+├── reachability.py   # DNS → local server → public URL, in the order they break
+├── mcp_server.py     # MCP tools search() / cities() / venues() over the feed
+└── scrape/
+    ├── __init__.py   # collect(): run sources, normalise city, survive failures
+    ├── http.py       # one GET, one POST
+    ├── browser.py    # real Chrome over CDP, for Cloudflare and infinite scroll
+    ├── parsers.py    # pure HTML → events (the only testable half)
+    └── sources.py    # the eleven sources and the SOURCES registry
+```
+
+The runtime path is `cli.scrape → scrape.collect → SOURCES[name]() → publish.write_out`.
+Reading the feed (`mcp_server`) never touches the scrapers: it reads the
+published route files, locally or over HTTPS.
+
+## Invariants
+
+- An event is a flat `dict[str, str]` (`agenda_scraper.Event`). A missing field is
+  `""`, never absent — TSV columns and route files depend on it.
+- Cheapest tier first: API > JSON-LD > rendered browser. Never add a Chrome-based
+  scraper for a site that publishes schema.org.
+- One bad source must not kill a run. `collect()` catches per source and reports it;
+  `assess()` turns "returned far less than usual" into a non-zero exit.
+- Filters are paths, not query strings — the static server ignores `?`. A new slice
+  means a new route in `plan_routes()`.
+- `slugify()` in `publish.py` is the single spelling rule; `mcp_server` imports it
+  rather than repeating it, or city routes stop resolving.
+- Parsers stay pure and stay tested. Anything that needs the network belongs in
+  `sources.py` or `browser.py`.
+- `uv` owns the lockfile. Add deps with `uv add <pkg>`, never edit `[project.dependencies]`.
+
+## Common change patterns
+
+- **Add a source** → a function in `scrape/sources.py` returning `list[Event]`, an
+  entry in `SOURCES`, a city in `SOURCE_CITY` if the source never says where it is,
+  and a rank in `publish.SOURCE_RANK` (venues before aggregators).
+- **A scraper went quiet** → `uv run agenda-scraper scrape <name>` prints its rows;
+  the parser, not the transport, is almost always what broke.
+- **Add a route** → `plan_routes()` in `publish.py`; `_prune()` removes stale files.
+- **Add an MCP tool** → a `@server.tool(description=...)` function in `mcp_server.py`.
+
+## Verification
+
+Run `just check` after every change. It composes:
+
+`just-fmt-check` + `loc-check` + `dir-check` + `lint` + `format-check` + `typecheck` + `test`
+
+`just test-live` adds the one test that talks to the published feed (`AGENDA_LIVE=1`).
+`uv run agenda-scraper reachability` answers the deployment question instead.
+
+Recipe reference:
+
+- `just install` — `uv sync`
+- `just run-cli` — run the CLI (alias `just run`)
+- `just lint` / `just lint-fix` — ruff check / `--fix`
+- `just format` / `just format-check` — ruff format / `--check`
+- `just typecheck` — mypy
+- `just test` / `just test-live` — pytest, without / with the network test
+- `just loc-check` / `just dir-check` — file-size and per-directory thresholds from `.quality.json`
+- `just clean` — remove build artifacts and caches
+- `just update-scaffold` — pull updates from the cookiecutter template
+
+## Related context
+
+- [agent.md](agent.md) — verify loop, auto-fix commands, common tasks, boundaries
+- [data/llm.txt](data/llm.txt) — the feed's contract, written for the agents that consume it
+- `.claude/` — Claude Code settings, scaffold-update hook, library-freshness hook
+- `.quality.json` — loc / dir thresholds (single source of truth)
+
+### Shared agent journal
+
+Use `./agent-log` (a shim for `atlas agent-log` — both are identical) for short-lived
+operational awareness between concurrent agents. It is not chat and not a task tracker: the
+issue tracker remains the source of truth for ownership, blockers, and durable findings.
+
+- Run `./agent-log recent` before interpreting shared state.
+- Before an action that can change another agent's observations, write an intent with every
+  affected scope. This includes shared-worktree edits, generated artifacts, git/index
+  mutations, and shared ports, processes, or services.
+- Run builds, tests, and deployments through the wrapper so start, commit, dirty state,
+  duration, exit code, and outcome are recorded even on failure:
+  `./agent-log run build|test|deploy --scope <resource> [--bead <id>] -- <command...>`.
+- For manual operations, use `./agent-log begin <operation> --scope <resource> [--bead <id>]
+  -- <summary>` and always close the returned id with `./agent-log end <id> --outcome
+  ok|failed|cancelled -- <result>`. `<operation>` is one of build, commit, deploy, edit, implement, investigate, merge, push, review, sync, test — what
+  makes this particular run specific goes in the summary, never in an invented operation name.
+- Record a temporary result-affecting discovery with `./agent-log finding --scope <resource>
+  --evidence <fact> [--bead <id>] -- <summary>`. This is the entry that saves another agent a
+  wasted run, and the one most often skipped — write one whenever you learn something that
+  would change what a concurrent agent does next, especially a dead end. Promote lasting
+  knowledge to the issue tracker or the relevant doc.
+- At session end, write `./agent-log handoff -- <stopping point + next step>` — the durable
+  baton the next session's briefing picks up. Handoffs never expire; the latest one is
+  always shown by `recent`.
+- Intents expire after 20 minutes and findings after 4 hours unless `--ttl` overrides them.
+  Renew by closing and reopening an intent; never treat an expired entry as current.
+- Keep summaries factual and short. Do not reply, ask questions, mention agents, narrate
+  routine progress, or log isolated reads/edits/tests that cannot affect anyone else.
+
+Canonical scopes are `path:<repo-relative-path>`, `artifact:<name>`, `service:<name>`,
+`host:<name>`, `port:<number>`, and `git:<worktree-or-ref>`; a repo may define additional
+canonical scopes of its own. Add multiple `--scope` flags when needed. The journal SQLite db
+lives in the git common directory, so linked worktrees share it without dirtying the repo.

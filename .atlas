@@ -1,0 +1,6 @@
+{
+  "description": "Concerts, club nights and festivals across the Netherlands, scraped and republished as static JSON/TSV",
+  "type": "python",
+  "framework": "click",
+  "archived": false
+}

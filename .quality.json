@@ -1,0 +1,5 @@
+{
+  "loc": { "warn": 300, "error": 400 },
+  "dir": { "max_files": 6 },
+  "globs": ["src/**/*.py", "tests/**/*.py"]
+}

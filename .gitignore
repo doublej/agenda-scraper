@@ -1,3 +1,22 @@
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.local
+.env.*.local
+
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+.claude/claude-tree.*
+**/CLAUDE.md.history.jsonl
+
 # The published feed: generated four times a day by agenda-scraper.timer.
 # index.html, llm.txt and llms.txt are hand-written and live in the same dir.
 /data/*
@@ -8,7 +27,3 @@
 # Chrome's persistent profile lives here — it holds the cookies (including the
 # Cloudflare clearance) that let the Tivoli scraper through. Never commit it.
 /.logs/
-
-__pycache__/
-*.pyc
-.env
