@@ -14,15 +14,16 @@ from pathlib import Path
 import pytest
 
 from agenda_scraper.entities import resolve_city, resolve_venue
-from agenda_scraper.scrape.parsers import parse_jsonld, parse_time_cards
+from agenda_scraper.scrape.cards import parse_cards
+from agenda_scraper.scrape.parsers import parse_jsonld
 from agenda_scraper.scrape.sources import SOURCE_CITY, SOURCES
 
 FIXTURES = Path(__file__).parent / "fixtures"
 GOLDENS = sorted(FIXTURES.glob("*.expected.json"))
 
 PARSERS = {
-    "time_cards": lambda html, a: parse_time_cards(
-        html, a.get("venue", ""), a.get("origin", "")
+    "cards": lambda html, a: parse_cards(
+        html, a.get("venue", ""), a.get("origin", ""), a.get("dates", "time")
     ),
     "jsonld": lambda html, a: parse_jsonld(html),
 }

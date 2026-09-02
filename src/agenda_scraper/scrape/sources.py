@@ -28,11 +28,11 @@ from datetime import date, timedelta
 from agenda_scraper import Event
 from agenda_scraper.entities.resolve import CITY_ALIAS
 from agenda_scraper.scrape.browser import browser_credentials, render
+from agenda_scraper.scrape.cards import parse_cards
 from agenda_scraper.scrape.http import get, post_json
 from agenda_scraper.scrape.parsers import (
     parse_jsonld,
     parse_paradiso,
-    parse_time_cards,
     parse_tivoli,
     unescape,
 )
@@ -181,9 +181,9 @@ def wp_events(base: str, venue: str, per_page: int = 100) -> list[Event]:
     return sorted(out, key=lambda e: e["date"])
 
 
-def time_cards(url: str, venue: str = "") -> list[Event]:
-    """A listing that dates each card with <time datetime> and nothing richer."""
-    return parse_time_cards(get(url), venue, url)
+def cards(url: str, venue: str = "", dates: str = "time") -> list[Event]:
+    """A listing whose only structure is a date next to a heading."""
+    return parse_cards(get(url), venue, url, dates)
 
 
 def jsonld_page(url: str, venue: str) -> list[Event]:
@@ -238,11 +238,14 @@ SOURCES: dict[str, Callable[[], list[Event]]] = {
         "https://www.muziekgieterij.nl/", "Muziekgieterij"
     ),
     "musicon": lambda: tribe_events("https://www.musicon.nl", "Musicon"),
-    "013": lambda: time_cards("https://www.013.nl/programma", "013"),
-    "spot": lambda: time_cards("https://www.spotgroningen.nl/programma/"),
-    "victorie": lambda: time_cards(
-        "https://www.podiumvictorie.nl/programma/", "Victorie"
+    "013": lambda: cards("https://www.013.nl/programma", "013"),
+    "spot": lambda: cards("https://www.spotgroningen.nl/programma/"),
+    "victorie": lambda: cards("https://www.podiumvictorie.nl/programma/", "Victorie"),
+    "gebrdenobel": lambda: cards(
+        "https://www.gebrdenobel.nl/agenda", "Gebr. de Nobel", "slug"
     ),
+    "gigant": lambda: cards("https://www.gigant.nl/concerten/", "Gigant", "dutch"),
+    "annabel": lambda: cards("https://www.annabel.nu/agenda", "Annabel", "dutch"),
     "dbstudio": lambda: tribe_events("https://www.dbstudio.nl", "dB's"),
     "tivoli": lambda: enrich_from_detail(
         parse_tivoli(
@@ -268,6 +271,9 @@ SOURCE_CITY = {
     "013": "Tilburg",
     "spot": "Groningen",
     "victorie": "Alkmaar",
+    "gebrdenobel": "Leiden",
+    "gigant": "Apeldoorn",
+    "annabel": "Rotterdam",
 }
 
 __all__ = ["CITY_ALIAS", "SOURCES", "SOURCE_CITY"]

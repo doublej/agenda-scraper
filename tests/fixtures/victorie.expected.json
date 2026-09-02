@@ -1,8 +1,9 @@
 {
- "parser": "time_cards",
+ "parser": "cards",
  "args": {
   "venue": "Victorie",
-  "origin": "https://www.podiumvictorie.nl/programma/"
+  "origin": "https://www.podiumvictorie.nl/programma/",
+  "dates": "time"
  },
  "events": [
   {

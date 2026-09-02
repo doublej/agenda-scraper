@@ -1,8 +1,9 @@
 {
- "parser": "time_cards",
+ "parser": "cards",
  "args": {
   "venue": "013",
-  "origin": "https://www.013.nl/programma"
+  "origin": "https://www.013.nl/programma",
+  "dates": "time"
  },
  "events": [
   {

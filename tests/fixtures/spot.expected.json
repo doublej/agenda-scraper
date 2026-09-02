@@ -1,8 +1,9 @@
 {
- "parser": "time_cards",
+ "parser": "cards",
  "args": {
   "venue": "",
-  "origin": "https://www.spotgroningen.nl/programma/"
+  "origin": "https://www.spotgroningen.nl/programma/",
+  "dates": "time"
  },
  "events": [
   {
