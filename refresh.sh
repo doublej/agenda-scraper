@@ -4,6 +4,10 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 export AGENDA_CHROME=${AGENDA_CHROME:-/usr/bin/google-chrome}
+# A systemd --user unit gets a minimal PATH, not the login one, and uv installs
+# itself to ~/.local/bin. Without this the timer dies with "uv: not found" and
+# exit 127 — which is how the first deploy of this script failed.
+export PATH="$HOME/.local/bin:$PATH"
 # Optional: ping an Uptime Kuma push monitor so a run that never happens is
 # noticed. Without this nothing catches a dead timer — the old events.json just
 # keeps being served with a 200.
