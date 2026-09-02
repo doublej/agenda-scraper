@@ -26,15 +26,6 @@
             "command": "python3 .claude/scripts/check_library_freshness.py"
           }
         ]
-      },
-      {
-        "matcher": "compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo 'Context was compacted. Re-read loop/MISSION.md and loop/PROGRESS.md, then continue at the first unfinished loop/BACKLOG.json item.'"
-          }
-        ]
       }
     ]
   }
