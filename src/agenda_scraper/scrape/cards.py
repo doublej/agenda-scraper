@@ -1,8 +1,8 @@
 """Listings whose only structure is a date sitting next to a heading.
 
-No Dutch venue outside the two aggregators publishes schema.org, none run The
-Events Calendar, and none serve an iCal feed — a 40-site sweep in loop/ has the
-counts. What their templates do emit is a date: an HTML5 <time datetime>, a
+No Dutch venue site publishes schema.org, none run The Events Calendar, and
+none serve an iCal feed — a 40-site sweep in loop/ has the counts; only the
+three nationwide aggregators carry structured data. What their templates do emit is a date: an HTML5 <time datetime>, a
 Dutch date spelt out in the card, or a date baked into the event's own URL.
 Pair that with the nearest heading and you have the event.
 """
@@ -57,6 +57,16 @@ def _heading_text(inner: str) -> str:
     """The act, not the support act: everything before the first nested tag."""
     lead = inner.split("<", 1)[0].strip()
     return unescape(lead or _TAGS.sub(" ", inner))
+
+
+def _in_text(html: str, pos: int, back: int = 300) -> bool:
+    """True when `pos` sits in visible text rather than inside a tag.
+
+    "15:01" out of datetime="2026-02-24T07:15:01+0100" is a publish timestamp,
+    and Gebr. de Nobel published 46 of those as door times before this check.
+    """
+    seg = html[max(0, pos - back) : pos]
+    return seg.rfind(">") >= seg.rfind("<")
 
 
 def _last_before(items: list[tuple[int, str]], pos: int, default: str) -> str:
@@ -133,7 +143,11 @@ def parse_cards(
     ]
     anchors = [(m.start(), m.group(1)) for m in _ANCHOR.finditer(html)]
     rooms = [(m.start(), m.group(1)) for m in _LOCATION.finditer(html)]
-    clocks = [(m.start(), m.group(0)) for m in _CLOCK.finditer(html)]
+    clocks = [
+        (m.start(), m.group(0))
+        for m in _CLOCK.finditer(html)
+        if _in_text(html, m.start())
+    ]
 
     # Only headings within NEAR of a date can win it, and both lists are already
     # in document order — so bisect the window instead of building the full cross
