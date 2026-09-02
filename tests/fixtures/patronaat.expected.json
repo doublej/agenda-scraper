@@ -1,0 +1,31 @@
+{
+ "parser": "cards",
+ "args": {
+  "venue": "Patronaat",
+  "origin": "https://www.patronaat.nl/programma/",
+  "dates": "dutch"
+ },
+ "events": [
+  {
+   "date": "2026-09-04",
+   "time": "",
+   "title": "Donna’s Hot Stuff",
+   "venue": "Patronaat",
+   "url": "https://patronaat.nl/event/donnas-hot-stuff-04-09-26/"
+  },
+  {
+   "date": "2026-09-05",
+   "time": "",
+   "title": "90s NOW",
+   "venue": "Patronaat",
+   "url": "https://patronaat.nl/event/90s-now-05-09-26/"
+  },
+  {
+   "date": "2026-09-05",
+   "time": "",
+   "title": "Bintangs – Bye Bye Haarlem",
+   "venue": "Patronaat",
+   "url": "https://patronaat.nl/event/bintangs-bye-bye-haarlem-05-09-26/"
+  }
+ ]
+}

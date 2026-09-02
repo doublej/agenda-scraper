@@ -1,0 +1,31 @@
+{
+ "parser": "cards",
+ "args": {
+  "venue": "Vera",
+  "origin": "https://www.vera-groningen.nl/programma/",
+  "dates": "dutch"
+ },
+ "events": [
+  {
+   "date": "2026-09-02",
+   "time": "",
+   "title": "Holy Wave",
+   "venue": "Vera",
+   "url": "https://www.vera-groningen.nl/?post_type=events&p=152958&lang=en"
+  },
+  {
+   "date": "2026-09-02",
+   "time": "",
+   "title": "Kelderbar Open",
+   "venue": "Vera",
+   "url": "https://www.vera-groningen.nl/?post_type=events&p=152730&lang=en"
+  },
+  {
+   "date": "2026-09-03",
+   "time": "",
+   "title": "Kelderbar Open",
+   "venue": "Vera",
+   "url": "https://www.vera-groningen.nl/?post_type=events&p=152729&lang=en"
+  }
+ ]
+}

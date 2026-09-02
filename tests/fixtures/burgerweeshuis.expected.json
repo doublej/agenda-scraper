@@ -1,0 +1,31 @@
+{
+ "parser": "cards",
+ "args": {
+  "venue": "Burgerweeshuis",
+  "origin": "https://www.burgerweeshuis.nl/",
+  "dates": "dutch"
+ },
+ "events": [
+  {
+   "date": "2026-09-05",
+   "time": "",
+   "title": "Entourage",
+   "venue": "Burgerweeshuis",
+   "url": "https://www.burgerweeshuis.nl/events/entourage-7"
+  },
+  {
+   "date": "2026-09-05",
+   "time": "",
+   "title": "Jouw",
+   "venue": "Burgerweeshuis",
+   "url": "https://www.burgerweeshuis.nl"
+  },
+  {
+   "date": "2026-09-09",
+   "time": "",
+   "title": "Science Café: Woonvormen van morgen",
+   "venue": "Burgerweeshuis",
+   "url": "https://www.burgerweeshuis.nl/events/science-cafe-woonvormen-van-morgen"
+  }
+ ]
+}

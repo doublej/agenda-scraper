@@ -24,11 +24,12 @@ import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
+from functools import partial
 
 from agenda_scraper import Event
 from agenda_scraper.entities.resolve import CITY_ALIAS
 from agenda_scraper.scrape.browser import browser_credentials, render
-from agenda_scraper.scrape.cards import parse_cards
+from agenda_scraper.scrape.cards import CARD_SOURCES, parse_cards
 from agenda_scraper.scrape.http import get, post_json
 from agenda_scraper.scrape.parsers import (
     parse_jsonld,
@@ -238,14 +239,6 @@ SOURCES: dict[str, Callable[[], list[Event]]] = {
         "https://www.muziekgieterij.nl/", "Muziekgieterij"
     ),
     "musicon": lambda: tribe_events("https://www.musicon.nl", "Musicon"),
-    "013": lambda: cards("https://www.013.nl/programma", "013"),
-    "spot": lambda: cards("https://www.spotgroningen.nl/programma/"),
-    "victorie": lambda: cards("https://www.podiumvictorie.nl/programma/", "Victorie"),
-    "gebrdenobel": lambda: cards(
-        "https://www.gebrdenobel.nl/agenda", "Gebr. de Nobel", "slug"
-    ),
-    "gigant": lambda: cards("https://www.gigant.nl/concerten/", "Gigant", "dutch"),
-    "annabel": lambda: cards("https://www.annabel.nu/agenda", "Annabel", "dutch"),
     "dbstudio": lambda: tribe_events("https://www.dbstudio.nl", "dB's"),
     "tivoli": lambda: enrich_from_detail(
         parse_tivoli(
@@ -268,12 +261,14 @@ SOURCE_CITY = {
     "rotown": "Rotterdam",
     "muziekgieterij": "Maastricht",
     "musicon": "Den Haag",
-    "013": "Tilburg",
-    "spot": "Groningen",
-    "victorie": "Alkmaar",
-    "gebrdenobel": "Leiden",
-    "gigant": "Apeldoorn",
-    "annabel": "Rotterdam",
 }
 
 __all__ = ["CITY_ALIAS", "SOURCES", "SOURCE_CITY"]
+
+SOURCES.update(
+    {
+        name: partial(cards, url, venue, dates)
+        for name, (url, venue, _, dates) in CARD_SOURCES.items()
+    }
+)
+SOURCE_CITY.update({name: city for name, (_, _, city, _) in CARD_SOURCES.items()})

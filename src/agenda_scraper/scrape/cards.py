@@ -170,3 +170,53 @@ def parse_cards(
             }
         )
     return sorted(out, key=lambda e: (e["date"], e["title"]))
+
+
+# Venues whose listing is only a date next to a heading — the tier that is left
+# once schema.org, The Events Calendar, iCal and the ticketing platforms are
+# gone. One line each: where to read it, what to call the room, which city, and
+# where the date is written. Every one of these was checked against its own
+# robots.txt; the ticketing platform they mostly share, stager.co, forbids
+# crawling outright, which is why the venue's own page is what gets fetched.
+CARD_SOURCES = {
+    # name: (url, venue, city, date source)
+    "013": ("https://www.013.nl/programma", "013", "Tilburg", "time"),
+    "spot": ("https://www.spotgroningen.nl/programma/", "", "Groningen", "time"),
+    "victorie": (
+        "https://www.podiumvictorie.nl/programma/",
+        "Victorie",
+        "Alkmaar",
+        "time",
+    ),
+    "gebrdenobel": (
+        "https://www.gebrdenobel.nl/agenda",
+        "Gebr. de Nobel",
+        "Leiden",
+        "slug",
+    ),
+    "gigant": ("https://www.gigant.nl/concerten/", "Gigant", "Apeldoorn", "dutch"),
+    "annabel": ("https://www.annabel.nu/agenda", "Annabel", "Rotterdam", "dutch"),
+    "melkweg": ("https://www.melkweg.nl/nl/agenda/", "Melkweg", "Amsterdam", "dutch"),
+    "effenaar": ("https://www.effenaar.nl/agenda", "Effenaar", "Eindhoven", "dutch"),
+    "patronaat": (
+        "https://www.patronaat.nl/programma/",
+        "Patronaat",
+        "Haarlem",
+        "dutch",
+    ),
+    "hedon": ("https://www.hedon-zwolle.nl/", "Hedon", "Zwolle", "dutch"),
+    "neushoorn": (
+        "https://www.neushoorn.nl/programma",
+        "Neushoorn",
+        "Leeuwarden",
+        "dutch",
+    ),
+    "burgerweeshuis": (
+        "https://www.burgerweeshuis.nl/",
+        "Burgerweeshuis",
+        "Deventer",
+        "dutch",
+    ),
+    "vera": ("https://www.vera-groningen.nl/programma/", "Vera", "Groningen", "dutch"),
+    "afaslive": ("https://www.afaslive.nl/agenda", "AFAS Live", "Amsterdam", "dutch"),
+}

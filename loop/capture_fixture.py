@@ -30,27 +30,34 @@ MARKS = {
 }
 
 
-def trim(html: str, parser: str, dates: str = "time") -> str:
+def trim(html: str, parser: str, dates: str, venue: str, url: str) -> str:
+    """The smallest window that still parses to a full set of cards.
+
+    Cutting at the first date on the page is not enough: a footer copyright or
+    a news teaser can hold the first few, and the snippet then parses to
+    nothing. So walk the dates and keep the first window that actually yields
+    cards — a fixture that parses to zero events tests nothing.
+    """
     if parser == "jsonld":
         blocks = re.findall(
             r'<script type="application/ld\+json"[^>]*>.*?</script>', html, re.DOTALL
         )
         return "\n".join(blocks)
     marks = [m.start() for m in re.finditer(MARKS[dates], html, re.IGNORECASE)]
-    if not marks:
+    if len(marks) <= CARDS:
         return html
-    # The head of a page is 40 kB of nav and inline CSS the parser never reads.
-    # Keep a run-up so the first card's own anchor and heading survive the cut.
-    start = max(0, marks[0] - LEAD)
-    end = marks[CARDS] if len(marks) > CARDS else len(html)
-    return html[start:end]
+    for i in range(len(marks) - CARDS):
+        snippet = html[max(0, marks[i] - LEAD) : marks[i + CARDS]]
+        if len(parse_cards(snippet, venue, url, dates)) >= CARDS:
+            return snippet
+    return html
 
 
 def main() -> None:
     name, parser, url = sys.argv[1], sys.argv[2], sys.argv[3]
     venue = sys.argv[4] if len(sys.argv) > 4 else ""
     dates = sys.argv[5] if len(sys.argv) > 5 else "time"
-    snippet = trim(get(url), parser, dates)
+    snippet = trim(get(url), parser, dates, venue, url)
     args = {"venue": venue, "origin": url, "dates": dates}
     events = (
         parse_cards(snippet, venue, url, dates)

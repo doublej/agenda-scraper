@@ -1,0 +1,31 @@
+{
+ "parser": "cards",
+ "args": {
+  "venue": "Hedon",
+  "origin": "https://www.hedon-zwolle.nl/",
+  "dates": "dutch"
+ },
+ "events": [
+  {
+   "date": "2026-09-02",
+   "time": "",
+   "title": "BRUISFESTIVAL 2026",
+   "venue": "Hedon",
+   "url": "https://www.hedon-zwolle.nl/voorstelling/32977/bruisfestival-2026"
+  },
+  {
+   "date": "2026-10-28",
+   "time": "19:30",
+   "title": "FATAL FLOWERS",
+   "venue": "Hedon",
+   "url": "https://www.hedon-zwolle.nl/voorstelling/33043/fatal-flowers"
+  },
+  {
+   "date": "2026-12-07",
+   "time": "19:00",
+   "title": "JAN VAN DUIKEREN & MARCEL VEENENDAAL (THEATER DE SPIEGEL)",
+   "venue": "Hedon",
+   "url": "https://www.hedon-zwolle.nl/voorstelling/33046/jan-van-duikeren-marcel-veenendaal-theater-de-spiegel"
+  }
+ ]
+}
