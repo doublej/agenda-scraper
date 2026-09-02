@@ -89,6 +89,18 @@ Per-source counts on the final run:
     musicon      77   dehelling    69   dbstudio 62   burgerweeshuis 49
     gigant       39   ekko         34   annabel 22   vera 20
 
+Every one of the fifteen new sources, checked against the five per-source
+criteria on /tmp/boeking/final — 100% valid ISO dates on all of them, venue and
+city resolving to records, a fixture pair, and a name in SOURCES, SOURCE_RANK
+and SOURCE_CITY (partyflock names its own city, so it is correctly absent
+there). Two are worth naming rather than burying:
+
+- **vera** sits exactly on the 20-event bar, not above it.
+- **annabel** scraped 22 rows and publishes 15: the horizon filter and dedupe
+  against podiuminfo take the rest. It is an extra, not one of the 13 backlog
+  items, so the Phase B count does not lean on it — but 22 on the wire and 15
+  in the feed is the honest pair of numbers.
+
 ### What the tier sweep actually found
 
 The backlog assumed the cheap tiers were there to be picked up. Over 45
