@@ -3,29 +3,51 @@
  "args": {
   "venue": "Hedon",
   "origin": "https://www.hedon-zwolle.nl/",
-  "dates": "dutch"
+  "dates": "dutch",
+  "links": "before"
  },
  "events": [
   {
-   "date": "2026-09-02",
+   "date": "2026-10-30",
    "time": "",
-   "title": "BRUISFESTIVAL 2026",
+   "title": "VROEGZAT",
    "venue": "Hedon",
-   "url": "https://www.hedon-zwolle.nl/voorstelling/32977/bruisfestival-2026"
+   "url": "https://www.hedon-zwolle.nl/"
   },
   {
-   "date": "2026-10-28",
-   "time": "19:30",
-   "title": "FATAL FLOWERS",
+   "date": "2026-10-30",
+   "time": "",
+   "title": "ZUCO 103",
    "venue": "Hedon",
-   "url": "https://www.hedon-zwolle.nl/voorstelling/33043/fatal-flowers"
+   "url": "https://www.hedon-zwolle.nl/voorstelling/32913/zuco-103"
   },
   {
-   "date": "2026-12-07",
-   "time": "19:00",
-   "title": "JAN VAN DUIKEREN & MARCEL VEENENDAAL (THEATER DE SPIEGEL)",
+   "date": "2026-10-31",
+   "time": "",
+   "title": "FRAZEY FORD",
    "venue": "Hedon",
-   "url": "https://www.hedon-zwolle.nl/voorstelling/33046/jan-van-duikeren-marcel-veenendaal-theater-de-spiegel"
+   "url": "https://www.hedon-zwolle.nl/voorstelling/32873/frazey-ford"
+  },
+  {
+   "date": "2026-11-01",
+   "time": "",
+   "title": "Blijf op de hoogte",
+   "venue": "Hedon",
+   "url": "https://www.hedon-zwolle.nl/voorstelling/32873/frazey-ford"
+  },
+  {
+   "date": "2026-11-01",
+   "time": "",
+   "title": "THE WATCH PLAYS GENESIS",
+   "venue": "Hedon",
+   "url": "https://www.hedon-zwolle.nl/voorstelling/32773/the-watch-plays-genesis"
+  },
+  {
+   "date": "2026-11-03",
+   "time": "",
+   "title": "BLUESWORLD CAFÉ: OLAV & THE BLUES CRUISE",
+   "venue": "Hedon",
+   "url": "https://www.hedon-zwolle.nl/voorstelling/33023/bluesworld-cafe-olav-the-blues-cruise"
   }
  ]
 }

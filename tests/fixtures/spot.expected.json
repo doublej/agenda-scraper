@@ -3,29 +3,65 @@
  "args": {
   "venue": "",
   "origin": "https://www.spotgroningen.nl/programma/",
-  "dates": "time"
+  "dates": "time",
+  "links": "before"
  },
  "events": [
   {
-   "date": "2026-09-02",
+   "date": "2026-10-02",
    "time": "20:30",
-   "title": "The 502s",
-   "venue": "A Theater",
-   "url": "https://www.spotgroningen.nl/programma/greyhounds/"
-  },
-  {
-   "date": "2026-09-03",
-   "time": "20:00",
-   "title": "Greyhounds",
-   "venue": "A Theater",
-   "url": "https://www.spotgroningen.nl/programma/greyhounds/"
-  },
-  {
-   "date": "2026-09-04",
-   "time": "20:00",
-   "title": "Kishi Bashi",
+   "title": "Anne Jan Toonstra",
    "venue": "Oosterpoort",
-   "url": "https://www.spotgroningen.nl/programma/kishi-bashi/"
+   "url": "https://www.spotgroningen.nl/programma/anne-jan-toonstra-4/"
+  },
+  {
+   "date": "2026-10-02",
+   "time": "20:00",
+   "title": "Black Stone Cherry - The Celebrate Tour",
+   "venue": "Oosterpoort",
+   "url": "https://www.spotgroningen.nl/programma/black-stone-cherry/"
+  },
+  {
+   "date": "2026-10-02",
+   "time": "20:00",
+   "title": "Dotan",
+   "venue": "Oosterpoort",
+   "url": "https://www.spotgroningen.nl/programma/dotan-3/"
+  },
+  {
+   "date": "2026-10-02",
+   "time": "20:15",
+   "title": "Katherine Priddy",
+   "venue": "Stadsschouwburg",
+   "url": "https://www.spotgroningen.nl/programma/sara-kroos-5/"
+  },
+  {
+   "date": "2026-10-02",
+   "time": "20:30",
+   "title": "Sara Kroos",
+   "venue": "Stadsschouwburg",
+   "url": "https://www.spotgroningen.nl/programma/sara-kroos-5/"
+  },
+  {
+   "date": "2026-10-03",
+   "time": "20:00",
+   "title": "IOS",
+   "venue": "Oosterpoort",
+   "url": "https://www.spotgroningen.nl/programma/ios-2/"
+  },
+  {
+   "date": "2026-10-03",
+   "time": "20:00",
+   "title": "Jalen Ngonda",
+   "venue": "Oosterpoort",
+   "url": "https://www.spotgroningen.nl/programma/jalen-ngonda/"
+  },
+  {
+   "date": "2026-10-03",
+   "time": "20:00",
+   "title": "Kika Sprangers",
+   "venue": "Oosterpoort",
+   "url": "https://www.spotgroningen.nl/programma/jalen-ngonda/"
   }
  ]
 }

@@ -114,10 +114,17 @@ def plan_routes(events: list[Event]) -> list[tuple[str, str, list[Event]]]:
     for source, rows in sorted(_group(events, "source").items()):
         routes.append((f"source/{source}", f"bron {source}", rows))
     # Venue routes stay keyed on the label a source published, not on venue_id:
-    # re-keying them would rename URLs that already exist.
+    # re-keying them would rename URLs that already exist. Two labels can still
+    # slugify to one path ("MEZZ" and "Mezz"), so merge them first — otherwise
+    # routes.json advertises the route twice and the one file on disk answers
+    # for whichever label was written last.
+    merged: dict[str, tuple[str, list[Event]]] = {}
     for venue, rows in sorted(_group(events, "venue").items()):
+        label, seen_rows = merged.get(slugify(venue), (venue, []))
+        merged[slugify(venue)] = (label, seen_rows + rows)
+    for slug, (label, rows) in sorted(merged.items()):
         if len(rows) >= VENUE_MIN_EVENTS:
-            routes.append((f"venue/{slugify(venue)}", venue, rows))
+            routes.append((f"venue/{slug}", label, rows))
     routes += _artist_routes(events)
     return routes
 

@@ -29,7 +29,7 @@ from functools import partial
 from agenda_scraper import Event
 from agenda_scraper.entities.resolve import CITY_ALIAS
 from agenda_scraper.scrape.browser import browser_credentials, render
-from agenda_scraper.scrape.cards import CARD_SOURCES, parse_cards
+from agenda_scraper.scrape.cards import CARD_SOURCES, LINKS_AFTER, parse_cards
 from agenda_scraper.scrape.http import get, post_json
 from agenda_scraper.scrape.parsers import (
     parse_jsonld,
@@ -183,9 +183,11 @@ def wp_events(base: str, venue: str, per_page: int = 100) -> list[Event]:
     return sorted(out, key=lambda e: e["date"])
 
 
-def cards(url: str, venue: str = "", dates: str = "time") -> list[Event]:
+def cards(
+    url: str, venue: str = "", dates: str = "time", links: str = "before"
+) -> list[Event]:
     """A listing whose only structure is a date next to a heading."""
-    return parse_cards(get(url), venue, url, dates)
+    return parse_cards(get(url), venue, url, dates, links)
 
 
 def partyflock(months: int = 3) -> list[Event]:
@@ -291,7 +293,9 @@ __all__ = ["CITY_ALIAS", "SOURCES", "SOURCE_CITY"]
 
 SOURCES.update(
     {
-        name: partial(cards, url, venue, dates)
+        name: partial(
+            cards, url, venue, dates, "after" if name in LINKS_AFTER else "before"
+        )
         for name, (url, venue, _, dates) in CARD_SOURCES.items()
     }
 )

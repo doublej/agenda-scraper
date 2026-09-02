@@ -3,29 +3,58 @@
  "args": {
   "venue": "Gebr. de Nobel",
   "origin": "https://www.gebrdenobel.nl/agenda",
-  "dates": "slug"
+  "dates": "slug",
+  "links": "before"
  },
  "events": [
   {
-   "date": "2026-09-02",
+   "date": "2026-11-19",
    "time": "",
-   "title": "Swingo",
+   "title": "WIES",
    "venue": "Gebr. de Nobel",
-   "url": "https://www.gebrdenobel.nl/agenda/swingo-02-sep-2026"
+   "url": "https://www.gebrdenobel.nl/agenda/wies-19-nov-2026"
   },
   {
-   "date": "2026-09-03",
+   "date": "2026-11-20",
    "time": "",
-   "title": "Club 3voor12 Leiden",
+   "title": "DeWolff",
    "venue": "Gebr. de Nobel",
-   "url": "https://www.gebrdenobel.nl/agenda/club-3voor12-leiden-03-sep-2026"
+   "url": "https://www.gebrdenobel.nl/agenda/dewolff-20-nov-2026"
   },
   {
-   "date": "2026-09-03",
+   "date": "2026-11-20",
    "time": "",
-   "title": "Pride Comedy",
+   "title": "Only 10's",
    "venue": "Gebr. de Nobel",
-   "url": "https://www.gebrdenobel.nl/agenda/pride-comedy-03-sep-2026"
+   "url": "https://www.gebrdenobel.nl/agenda/only-10s-20-nov-2026"
+  },
+  {
+   "date": "2026-11-20",
+   "time": "",
+   "title": "The Hillbilly Moonshiners",
+   "venue": "Gebr. de Nobel",
+   "url": "https://www.gebrdenobel.nl/agenda/hillbilly-moonshiners-20-nov-2026"
+  },
+  {
+   "date": "2026-11-20",
+   "time": "",
+   "title": "Yoràn Vroom’s Group of Friends",
+   "venue": "Gebr. de Nobel",
+   "url": "https://www.gebrdenobel.nl/agenda/yoran-vrooms-group-friends-20-nov-2026"
+  },
+  {
+   "date": "2026-11-21",
+   "time": "",
+   "title": "Sing Loud, Play Hard!",
+   "venue": "Gebr. de Nobel",
+   "url": "https://www.gebrdenobel.nl/agenda/sing-loud-play-hard-21-nov-2026"
+  },
+  {
+   "date": "2026-11-21",
+   "time": "",
+   "title": "The Zeppelin Affair",
+   "venue": "Gebr. de Nobel",
+   "url": "https://www.gebrdenobel.nl/agenda/zeppelin-affair-21-nov-2026"
   }
  ]
 }

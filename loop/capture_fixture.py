@@ -1,6 +1,6 @@
 """Capture a source's page as the smallest snippet that still reproduces the parse.
 
-    uv run python loop/capture_fixture.py <name> <parser> <url> [venue]
+    uv run python loop/capture_fixture.py <name> <parser> <url> [venue] [dates] [links]
 
 Writes tests/fixtures/<name>.html and <name>.expected.json. The snippet keeps
 the first few cards and nothing else, so a fixture stays a few kB and a diff on
@@ -19,7 +19,7 @@ from agenda_scraper.scrape.http import get
 from agenda_scraper.scrape.parsers import parse_jsonld, parse_microdata
 
 FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
-CARDS = 3
+CARDS = 6  # enough rows that a URL-attribution slip shows up as a pattern
 LEAD = 3000  # bytes kept before the first <time>, so its card stays whole
 
 
@@ -31,7 +31,9 @@ MARKS = {
 }
 
 
-def trim(html: str, parser: str, dates: str, venue: str, url: str) -> str:
+def trim(
+    html: str, parser: str, dates: str, venue: str, url: str, links: str = "before"
+) -> str:
     """The smallest window that still parses to a full set of cards.
 
     Cutting at the first date on the page is not enough: a footer copyright or
@@ -50,10 +52,26 @@ def trim(html: str, parser: str, dates: str, venue: str, url: str) -> str:
     marks = [m.start() for m in re.finditer(MARKS[dates], html, re.IGNORECASE)]
     if len(marks) <= CARDS:
         return html
-    for i in range(len(marks) - CARDS):
-        snippet = html[max(0, marks[i] - LEAD) : marks[i + CARDS]]
-        if len(parse_cards(snippet, venue, url, dates)) >= CARDS:
-            return snippet
+    # Smallest window, not the first: on a page whose dates are far apart the
+    # first hit can be 178kB, and a fixture nobody can read in a diff is a
+    # fixture nobody checks. Settle for fewer cards before keeping a whole page.
+    for want in range(CARDS, 2, -1):
+        found = [
+            snippet
+            for i in range(len(marks) - want)
+            if len(
+                parse_cards(
+                    (snippet := html[max(0, marks[i] - LEAD) : marks[i + want]]),
+                    venue,
+                    url,
+                    dates,
+                    links,
+                )
+            )
+            >= want
+        ]
+        if found:
+            return min(found, key=len)
     return html
 
 
@@ -61,10 +79,11 @@ def main() -> None:
     name, parser, url = sys.argv[1], sys.argv[2], sys.argv[3]
     venue = sys.argv[4] if len(sys.argv) > 4 else ""
     dates = sys.argv[5] if len(sys.argv) > 5 else "time"
-    snippet = trim(get(url), parser, dates, venue, url)
-    args = {"venue": venue, "origin": url, "dates": dates}
+    links = sys.argv[6] if len(sys.argv) > 6 else "before"
+    snippet = trim(get(url), parser, dates, venue, url, links)
+    args = {"venue": venue, "origin": url, "dates": dates, "links": links}
     events = {
-        "cards": lambda: parse_cards(snippet, venue, url, dates),
+        "cards": lambda: parse_cards(snippet, venue, url, dates, links),
         "microdata": lambda: parse_microdata(snippet),
         "jsonld": lambda: parse_jsonld(snippet),
     }[parser]()
