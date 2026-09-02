@@ -57,18 +57,20 @@ and never staged.
 
 ### Phase B boundary — evidence
 
-Full `--all` run at /tmp/boeking/final, `just check` green with
-AGENDA_VALIDATE_DIR pointed at it (72 passed, 1 skipped):
+Full `--all` run at /tmp/boeking/final2 — re-run after the URL fix below, so
+the numbers and the published links come from the same code. `just check` green
+with AGENDA_VALIDATE_DIR pointed at it:
 
     json files walked: 651
     problems: 0
     negative control errors: 12
     events with a bad date: 0
     events with the wrong key set: 0
+    urls repeating their first path segment: 0
 
 Against loop/BASELINE.json:
 
-    total events     2268 ->   7814   x3.45
+    total events     2268 ->   7815   x3.45
     venue labels      485 ->   1281   x2.64   (1254 distinct venue_ids)
     cities            106 ->    312   x2.94
     routes            154 ->    649
@@ -124,6 +126,25 @@ candidate sites and 38 real agenda paths:
 - **Microdata**: Partyflock publishes schema.org as itemprop attributes rather
   than an ld+json block. One parser, 1312 Dutch events, and by far the widest
   venue coverage in the feed.
+
+### Three bugs this run introduced and then caught
+
+Worth naming, because two of them shipped in a commit before they were found:
+
+- **Relative links joined onto the listing path.** `origin + href` gave
+  `/agenda/agenda/<slug>` on Effenaar and Gebr. de Nobel and
+  `/nl/agenda/nl/agenda/<slug>` on Melkweg — 381 published events whose link
+  404'd. `urllib.parse.urljoin` handles all three href shapes; the golden test
+  now asserts a URL never repeats its first path segment. Found by checking the
+  published feed rather than the parser, which is where it was visible.
+- **A quadratic pairing.** The date/heading match built the full cross product.
+  Spot's 616-card page took 0.13s, so nothing looked wrong; a synthetic
+  5000-card page took 37 seconds. Both lists are in document order, so the
+  window is a bisect: 0.34s.
+- **The dev group reaching the timer host.** Moving ruff, mypy and pytest out
+  of an extra and into a dependency group fixed `just check` locally and would
+  have installed all three on the Linux box, because `uv run` takes default
+  groups. `refresh.sh` passes `--no-dev`.
 
 ### Two things that cost real time, written down so they do not again
 
