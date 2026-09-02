@@ -116,6 +116,12 @@ details.filters[open] summary::before { content:"Filters ▴"; }
 .chip:hover { background:var(--ink); color:var(--paper); }
 .chip[aria-pressed="true"] { color:var(--paper); background:var(--ink); }
 .chip .n { opacity:.6; margin-left:5px; }
+/* "alle bronnen" resets the source set. Dashed, because it is a way back
+   rather than one more source to choose from. */
+.chip.all { border-style:dashed; }
+/* Pushed to the far end so the way out of a filter is never mixed in with the
+   controls that got you into one. */
+.btn.reset { margin-left:auto; }
 
 .day { margin-top:32px; }
 .day h2 {
@@ -189,6 +195,7 @@ footer .btn { font-size:12px; padding:3px 8px; }
           <option value="">heel Nederland</option>
         </select>
         <div class="chips" id="chips"></div>
+        <button class="btn reset" id="reset" hidden></button>
       </div>
     </details>
   </div>
@@ -263,9 +270,12 @@ function visible() {
 
 function render() {
   const rows = visible();
+  drawReset();  // before the early return: an empty list is when it matters most
   const list = document.getElementById("list");
   if (!rows.length) {
-    list.innerHTML = '<p class="empty">Niets gevonden. Ruimer datumbereik of andere zoekterm?</p>';
+    list.innerHTML = activeFilters()
+      ? '<p class="empty">Niets gevonden met deze filters. Wis ze hierboven, of probeer een ruimer datumbereik.</p>'
+      : '<p class="empty">Niets gevonden. Ruimer datumbereik of andere zoekterm?</p>';
     return;
   }
   const byDay = new Map();
@@ -298,13 +308,64 @@ function drawCities() {
       `<option value="${esc(c)}">${esc(c)} (${n})</option>`).join("");
 }
 
+// ── resetting ────────────────────────────────────────────────────────────────
+// The source chips isolate on the first click, which is one tap into "only
+// this" and twenty-five taps back out again. So every filter gets a way back:
+// "alle bronnen" for the chips, and one button that clears the lot.
+const RANGE_DEFAULT = "31";
+const el = (id) => document.getElementById(id);
+
+function saveOff() {
+  try { localStorage.setItem("agenda:off", JSON.stringify([...off])); } catch (_) {}
+}
+
+function syncChips() {
+  document.querySelectorAll(".chip[data-src]").forEach(c =>
+    c.setAttribute("aria-pressed", String(!off.has(c.dataset.src))));
+  const all = el("chip-all");
+  if (all) all.setAttribute("aria-pressed", String(off.size === 0));
+}
+
+/** How many filters are narrowing the list right now — 0 means "showing all". */
+function activeFilters() {
+  return (el("q").value.trim() ? 1 : 0) +
+         (el("range").value !== RANGE_DEFAULT ? 1 : 0) +
+         (el("city").value ? 1 : 0) +
+         (off.size ? 1 : 0);
+}
+
+function drawReset() {
+  const n = activeFilters();
+  const b = el("reset");
+  b.hidden = n === 0;
+  b.textContent = `Wis filters (${n})`;
+}
+
+function clearSources() {
+  off.clear();
+  saveOff();
+  syncChips();
+  render();
+}
+
+function resetFilters() {
+  el("q").value = "";
+  el("range").value = RANGE_DEFAULT;
+  el("city").value = "";
+  clearSources();
+}
+
 function drawChips() {
   const counts = {};
   for (const e of DATA.events) counts[e.source] = (counts[e.source] || 0) + 1;
-  document.getElementById("chips").innerHTML = Object.keys(counts).sort().map(s =>
-    `<button class="chip" data-src="${esc(s)}" aria-pressed="${!off.has(s)}">
+  el("chips").innerHTML =
+    `<button class="chip all" id="chip-all" aria-pressed="${off.size === 0}"
+       title="Toon alle bronnen weer">alle bronnen</button>` +
+    Object.keys(counts).sort().map(s =>
+      `<button class="chip" data-src="${esc(s)}" aria-pressed="${!off.has(s)}">
        ${esc(LABEL[s] || s)}<span class="n">${counts[s]}</span></button>`).join("");
-  document.querySelectorAll(".chip").forEach(b => b.onclick = () => {
+  el("chip-all").onclick = clearSources;
+  document.querySelectorAll(".chip[data-src]").forEach(b => b.onclick = () => {
     const s = b.dataset.src;
     if (off.size === 0) {
       // Nothing filtered yet: first click isolates this source instead of
@@ -313,9 +374,8 @@ function drawChips() {
     } else {
       off.has(s) ? off.delete(s) : off.add(s);
     }
-    document.querySelectorAll(".chip").forEach(c =>
-      c.setAttribute("aria-pressed", String(!off.has(c.dataset.src))));
-    try { localStorage.setItem("agenda:off", JSON.stringify([...off])); } catch (_) {}
+    syncChips();
+    saveOff();
     render();
   });
 }
@@ -410,6 +470,7 @@ fetch("events.json", { cache: "no-store" })
 document.getElementById("q").oninput = render;
 document.getElementById("range").onchange = render;
 document.getElementById("city").onchange = render;
+document.getElementById("reset").onclick = resetFilters;
 document.getElementById("llm-open").onclick = openSheet;
 document.getElementById("sheet-copy").onclick = copySheet;
 document.getElementById("sheet-close").onclick = () => document.getElementById("sheet").close();
