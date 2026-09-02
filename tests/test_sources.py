@@ -57,6 +57,11 @@ def test_a_parsed_event_carries_a_date_a_title_and_a_resolvable_venue(path):
         assert len(e["date"]) == 10 and e["date"][4] == "-", e
         assert e["title"].strip(), e
         assert resolve_venue(e["venue"], city)["id"], e
+        # A relative href joined onto the listing path instead of the host gave
+        # /agenda/agenda/<slug> on two sites, so every link 404'd.
+        assert e["url"].startswith("https://"), e
+        segments = [s for s in e["url"].split("/")[3:] if s]
+        assert len(segments) < 2 or segments[0] != segments[1], e
     assert resolve_city(city)["id"] or name not in SOURCE_CITY
 
 

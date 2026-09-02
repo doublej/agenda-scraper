@@ -10,6 +10,7 @@ Pair that with the nearest heading and you have the event.
 import re
 from bisect import bisect_left, bisect_right
 from datetime import date, timedelta
+from urllib.parse import urljoin
 
 from agenda_scraper import Event
 from agenda_scraper.scrape.parsers import unescape
@@ -175,7 +176,9 @@ def parse_cards(
                 "time": clock or (near_clock[0] if near_clock else ""),
                 "title": title,
                 "venue": room.replace("-", " ").title() if room else venue,
-                "url": url if url.startswith("http") else origin.rstrip("/") + url,
+                # urljoin, not concatenation: `origin` is the listing page, so
+                # "/agenda/x" off /agenda gave /agenda/agenda/x on two sites.
+                "url": urljoin(origin, url),
             }
         )
     return sorted(out, key=lambda e: (e["date"], e["title"]))
