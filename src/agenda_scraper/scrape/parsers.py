@@ -166,12 +166,12 @@ _MICRO_COUNTRY = re.compile(
 )
 
 
-def _overnight(start: str, closes: str) -> str:
+def _overnight(start: str, closes: str) -> bool:
     """A club night that ends at 04:59 is one night out, not a two-day festival."""
     if not closes[:10] or closes[:10] <= start[:10]:
-        return ""
+        return False
     next_day = date.fromisoformat(start[:10]) + timedelta(days=1)
-    return "yes" if closes[:10] == str(next_day) and closes[11:16] < "12:00" else ""
+    return closes[:10] == str(next_day) and closes[11:16] < "12:00"
 
 
 def _micro(chunk: str, prop: str) -> str:
