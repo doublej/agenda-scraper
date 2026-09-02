@@ -193,3 +193,22 @@ def test_the_registries_count_what_was_published(tmp_path):
     assert [(v["id"], v["count"]) for v in venues] == [("paradiso", 1)]
     assert [(c["id"], c["count"]) for c in cities] == [("amsterdam", 1)]
     assert {a["id"] for a in artists} == {"dixon", "jimi-jules", "gizem"}
+
+
+def test_the_event_typeddict_the_tsv_and_the_schema_all_agree():
+    """Three declarations of one shape, kept honest against each other.
+
+    models.Event is never used as an annotation — every module passes the loose
+    agenda_scraper.Event (dict[str, str]) — so mypy checks nothing about it and
+    it can drift from the feed it claims to describe. It earns its place by
+    being tied to the two declarations that ARE enforced: the TSV column order
+    and the JSON Schema the published run is validated against.
+    """
+    from agenda_scraper.entities.models import ENTITY_FIELDS, LEGACY_FIELDS, Event
+    from agenda_scraper.publish import FIELDS
+
+    schema = json.loads((SCHEMA_DIR / "event.schema.json").read_text())
+    assert tuple(Event.__annotations__) == FIELDS
+    assert FIELDS == LEGACY_FIELDS + ENTITY_FIELDS
+    assert tuple(schema["required"]) == FIELDS
+    assert tuple(schema["properties"]) == FIELDS
