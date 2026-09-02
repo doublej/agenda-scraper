@@ -57,8 +57,8 @@ and never staged.
 
 ### Phase B boundary — evidence
 
-Full `--all` run at /tmp/boeking/final2 — re-run after the URL fix below, so
-the numbers and the published links come from the same code. `just check` green
+Full `--all` run at /tmp/boeking/final4, taken at HEAD after every fix below,
+so the numbers, the links and the code are the same thing. `just check` green
 with AGENDA_VALIDATE_DIR pointed at it:
 
     json files walked: 651
@@ -67,6 +67,12 @@ with AGENDA_VALIDATE_DIR pointed at it:
     events with a bad date: 0
     events with the wrong key set: 0
     urls repeating their first path segment: 0
+    gebrdenobel times: [("", 111)]        # no publish timestamps left
+
+One run in between (final3) exited 1 with muziekgieterij timed out and paradiso
+404, and is not the artifact quoted here. Worth recording rather than hiding:
+a full run touches 26 hosts and two of them will flake, which is exactly what
+`assess()` and the non-zero exit are for. The rerun was clean.
 
 Against loop/BASELINE.json:
 
