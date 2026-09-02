@@ -21,6 +21,9 @@ MAX_CHARS = 60
 
 # "(Metal-Punk-Goth)", "[sold out]", "(0,5+)" — never part of a name.
 _NOISE = re.compile(r"\s*[(\[{][^)\]}]*[)\]}]")
+# Podiuminfo publishes "Douwe Bob @ Openluchttheater Amersfoort" — half of the
+# feed's titles name the venue after an @. The venue is already its own entity.
+_AT_VENUE = re.compile(r"\s+@\s+.*$")
 # "Lucid Recordings presents - Rhythmism" -> everything after the handoff.
 _PRESENTS = re.compile(
     r"^.{2,60}?\s+(?:presents?|presenteert|pres\.|invites|invite)\s*[-–—:]?\s+(?=\S)",
@@ -49,6 +52,7 @@ _SKIP_TITLE = re.compile(
     r"\b(?:pubquiz|pub quiz|quiz|bingo|karaoke|open podium|open mic|open stage|"
     r"jam ?sessie|spelletjes|filmavond|film|expo|expositie|workshop|lezing|"
     r"cursus|rondleiding|markt|borrel|dagje|matinee|silent disco|"
+    r"lunchconcert|lunchpauzeconcert|orgelconcert|koffieconcert|jam ?session|"
     r"battle of the bands|kerstborrel|nieuwjaars(?:borrel|receptie)|"
     r"vrijmibo|meet ?& ?greet|signeersessie)\b",
     re.IGNORECASE,
@@ -60,11 +64,17 @@ def _flat(name: str) -> str:
 
 
 def _trim_part(part: str) -> str:
-    """Drop a trailing "live" / "dj set" that qualifies the act, not names it."""
+    """Drop a trailing "live" / "dj set" that qualifies the act, not names it.
+
+    Popping more than one word down to a single leftover means the part was a
+    genre phrase all along — "Hard Techno Rave" is not an act called "Hard".
+    """
     words = part.split()
+    popped = 0
     while len(words) > 1 and _flat(words[-1]) in _STOP_PART:
         words.pop()
-    return " ".join(words)
+        popped += 1
+    return "" if popped > 1 and len(words) == 1 else " ".join(words)
 
 
 def _plausible(part: str) -> bool:
@@ -80,7 +90,7 @@ def extract_artists(title: str) -> list[Artist]:
     """Names the title seems to promise, with how much the rule trusts each one."""
     if not title or _SKIP_TITLE.search(title):
         return []
-    clean = _NOISE.sub("", title).strip(" -–—:|")
+    clean = _AT_VENUE.sub("", _NOISE.sub("", title)).strip(" -–—:|")
     trimmed = _PRESENTS.sub("", clean, count=1)
     if trimmed == clean:
         trimmed = _BRAND.sub("", clean, count=1)
