@@ -158,6 +158,7 @@ li.ev:hover, li.ev:hover .t, li.ev:hover .where, li.ev:hover .tag {
   font-size:11px; letter-spacing:.03em; text-transform:none;
   color:var(--flag-on); background:var(--flag);
 }
+.more { margin-top:28px; text-align:center; }
 .empty { margin-top:40px; color:var(--ink-2); text-align:center; }
 footer { margin-top:44px; padding-top:16px; border-top:1px solid var(--line);
          color:var(--ink-2); font-size:12.5px; }
@@ -268,7 +269,19 @@ function visible() {
              .toLowerCase().includes(q)));
 }
 
+// Every row is six DOM nodes, so the whole feed is about 48 000 of them and
+// 20MB of heap — for a screen that shows twenty. Render a page at a time and
+// let the reader ask for more; the filters, not scrolling, are how you get to
+// a particular night anyway.
+const PAGE = 250;
+let shown = PAGE;
+
 function render() {
+  shown = PAGE;  // a new filter starts a new list, not a longer one
+  paint();
+}
+
+function paint() {
   const rows = visible();
   drawReset();  // before the early return: an empty list is when it matters most
   const list = document.getElementById("list");
@@ -278,8 +291,9 @@ function render() {
       : '<p class="empty">Niets gevonden. Ruimer datumbereik of andere zoekterm?</p>';
     return;
   }
+  const page = rows.slice(0, shown);
   const byDay = new Map();
-  for (const e of rows) (byDay.get(e.date) || byDay.set(e.date, []).get(e.date)).push(e);
+  for (const e of page) (byDay.get(e.date) || byDay.set(e.date, []).get(e.date)).push(e);
 
   list.innerHTML = [...byDay].map(([date, evs]) => `
     <section class="day${date === todayISO() ? " today" : ""}">
@@ -296,7 +310,13 @@ function render() {
           <span class="tag">${esc(LABEL[e.source] || e.source)}</span>
         </li>`).join("")}
       </ul>
-    </section>`).join("");
+    </section>`).join("") + (rows.length > page.length ? `
+    <div class="more">
+      <button class="btn" id="more">Toon meer (${rows.length - page.length} te gaan)</button>
+    </div>` : "");
+
+  const more = document.getElementById("more");
+  if (more) more.onclick = () => { shown += PAGE; paint(); };
 }
 
 function drawCities() {
@@ -467,7 +487,13 @@ fetch("events.json", { cache: "no-store" })
       `<p class="empty">${esc(e.message)}</p>`;
   });
 
-document.getElementById("q").oninput = render;
+// Typing rebuilt the list on every keystroke: ten characters cost ten full
+// renders, 750ms and 35MB of garbage. One render once the typing stops.
+let typing;
+document.getElementById("q").oninput = () => {
+  clearTimeout(typing);
+  typing = setTimeout(render, 140);
+};
 document.getElementById("range").onchange = render;
 document.getElementById("city").onchange = render;
 document.getElementById("reset").onclick = resetFilters;
