@@ -306,8 +306,15 @@ function drawChips() {
        ${esc(LABEL[s] || s)}<span class="n">${counts[s]}</span></button>`).join("");
   document.querySelectorAll(".chip").forEach(b => b.onclick = () => {
     const s = b.dataset.src;
-    off.has(s) ? off.delete(s) : off.add(s);
-    b.setAttribute("aria-pressed", String(!off.has(s)));
+    if (off.size === 0) {
+      // Nothing filtered yet: first click isolates this source instead of
+      // just excluding it, so one tap gets to "only this" in one step.
+      for (const src of Object.keys(counts)) if (src !== s) off.add(src);
+    } else {
+      off.has(s) ? off.delete(s) : off.add(s);
+    }
+    document.querySelectorAll(".chip").forEach(c =>
+      c.setAttribute("aria-pressed", String(!off.has(c.dataset.src))));
     try { localStorage.setItem("agenda:off", JSON.stringify([...off])); } catch (_) {}
     render();
   });
