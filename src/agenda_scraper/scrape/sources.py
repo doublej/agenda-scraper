@@ -8,6 +8,10 @@ jsonld One GET, schema.org blocks in the HTML. Podiuminfo (every concert in
        NL) and Festivalinfo (every festival) paginate; De Helling, Rotown
        and Muziekgieterij publish their whole agenda on one page. The Events
        Calendar's REST API (Musicon, dB's) is the same idea with less HTML.
+cards  One GET, <time datetime> in the listing markup. The last cheap tier:
+       no Dutch venue site outside the two aggregators serves schema.org, but
+       the semantic time element is in every listing template. 013, Spot
+       (three buildings off one page) and Victorie all answer on it.
 render Real Chrome over CDP. Only TivoliVredenburg (Cloudflare managed
        challenge — curl, headless Chrome and WebFetch all get 403) and
        Paradiso (no agenda route at all; the homepage is an infinite scroll
@@ -28,6 +32,7 @@ from agenda_scraper.scrape.http import get, post_json
 from agenda_scraper.scrape.parsers import (
     parse_jsonld,
     parse_paradiso,
+    parse_time_cards,
     parse_tivoli,
     unescape,
 )
@@ -176,6 +181,11 @@ def wp_events(base: str, venue: str, per_page: int = 100) -> list[Event]:
     return sorted(out, key=lambda e: e["date"])
 
 
+def time_cards(url: str, venue: str = "") -> list[Event]:
+    """A listing that dates each card with <time datetime> and nothing richer."""
+    return parse_time_cards(get(url), venue, url)
+
+
 def jsonld_page(url: str, venue: str) -> list[Event]:
     """A venue that publishes its whole agenda as JSON-LD on one page."""
     return [{**e, "venue": e["venue"] or venue} for e in parse_jsonld(get(url))]
@@ -228,6 +238,11 @@ SOURCES: dict[str, Callable[[], list[Event]]] = {
         "https://www.muziekgieterij.nl/", "Muziekgieterij"
     ),
     "musicon": lambda: tribe_events("https://www.musicon.nl", "Musicon"),
+    "013": lambda: time_cards("https://www.013.nl/programma", "013"),
+    "spot": lambda: time_cards("https://www.spotgroningen.nl/programma/"),
+    "victorie": lambda: time_cards(
+        "https://www.podiumvictorie.nl/programma/", "Victorie"
+    ),
     "dbstudio": lambda: tribe_events("https://www.dbstudio.nl", "dB's"),
     "tivoli": lambda: enrich_from_detail(
         parse_tivoli(
@@ -250,6 +265,9 @@ SOURCE_CITY = {
     "rotown": "Rotterdam",
     "muziekgieterij": "Maastricht",
     "musicon": "Den Haag",
+    "013": "Tilburg",
+    "spot": "Groningen",
+    "victorie": "Alkmaar",
 }
 
 __all__ = ["CITY_ALIAS", "SOURCES", "SOURCE_CITY"]

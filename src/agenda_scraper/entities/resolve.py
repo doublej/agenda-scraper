@@ -75,7 +75,19 @@ VENUE_ALIAS = {
     "lantarenvenster": "LantarenVenster",
     "bitterzoet": "Bitterzoet",
     "burgerweeshuis": "Burgerweeshuis",
+    "oosterpoort": "De Oosterpoort",
+    "spotgroningen": "De Oosterpoort",
+    "vredenburgleidscherijn": "TivoliVredenburg",
 }
+
+# Names that describe the building rather than name it. Half the country has a
+# Stadsschouwburg, so these take the city into the id or two of them merge.
+_GENERIC_WORDS = """
+    schouwburg stadsschouwburg theater stadstheater concertzaal muziekcentrum
+    stadsgehoorzaal cultuurhuis cultureelcentrum poppodium podium grotekerk
+    dekerk kerk bibliotheek museum sporthal evenementenhal parkeerterrein
+"""
+_GENERIC = frozenset(_GENERIC_WORDS.split())
 
 # Words a source glues onto a venue name that say what it is, not which it is.
 _VENUE_PREFIX = re.compile(
@@ -134,6 +146,8 @@ def resolve_venue(name: str, city: str = "") -> Venue:
     trimmed = _trim_venue(name, city)
     canonical = VENUE_ALIAS.get(_flat(trimmed), trimmed)
     resolved_city = resolve_city(city)
+    if _flat(canonical) in _GENERIC and resolved_city["name"]:
+        canonical = f"{canonical} {resolved_city['name']}"
     return {
         "id": slugify(canonical),
         "name": canonical,

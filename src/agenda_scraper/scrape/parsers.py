@@ -151,3 +151,80 @@ def parse_paradiso(html: str, start_year: int | None = None) -> list[Event]:
                 }
             )
     return out
+
+
+# The one landmark a modern Dutch venue site does still publish: <time datetime>.
+# None of them serve schema.org, but the semantic element is in every listing
+# template, and the heading next to it is the act.
+_TIME = re.compile(r'<time[^>]*\bdatetime="(20\d\d-\d\d-\d\d)(?:T(\d\d:\d\d))?[^"]*"')
+_HEADING = re.compile(r"<h[1-4][^>]*>(.*?)</h[1-4]>", re.DOTALL)
+_ANCHOR = re.compile(r'<a[^>]+href="([^"#]+)"')
+# Spot runs two buildings off one listing and says which on the card itself.
+_LOCATION = re.compile(r'data-location="([^"]+)"')
+_TAGS = re.compile(r"<[^>]+>")
+NEAR = 3000  # a heading further than this from its <time> belongs to another card
+
+
+def _last_before(items: list[tuple[int, str]], pos: int, default: str) -> str:
+    """The last value whose match started before `pos` — the card's own attribute."""
+    found = default
+    for start, value in items:
+        if start > pos:
+            break
+        found = value
+    return found
+
+
+def _heading_text(inner: str) -> str:
+    """The act, not the support act: everything before the first nested tag."""
+    lead = inner.split("<", 1)[0].strip()
+    return unescape(lead or _TAGS.sub(" ", inner))
+
+
+def parse_time_cards(html: str, venue: str = "", origin: str = "") -> list[Event]:
+    """Pair every <time datetime> with the heading nearest to it.
+
+    Listings put the date before the title (013) or after it (Spot, Victorie),
+    so position, not order, decides which heading belongs to which date. Each
+    heading is claimed once, nearest date first, which keeps the pairing stable
+    when a card is missing one of the two.
+    """
+    times = [(m.start(), m.group(1), m.group(2) or "") for m in _TIME.finditer(html)]
+    heads = [
+        (m.start(), text)
+        for m in _HEADING.finditer(html)
+        if (text := _heading_text(m.group(1)))
+    ]
+    anchors = [(m.start(), m.group(1)) for m in _ANCHOR.finditer(html)]
+    rooms = [(m.start(), m.group(1)) for m in _LOCATION.finditer(html)]
+    pairs = sorted(
+        ((abs(tp - hp), tp, hp) for tp, _, _ in times for hp, _ in heads),
+        key=lambda x: x[:2],
+    )
+    taken_h: set[int] = set()
+    chosen: dict[int, int] = {}
+    for gap, tp, hp in pairs:
+        if gap > NEAR or tp in chosen or hp in taken_h:
+            continue
+        chosen[tp] = hp
+        taken_h.add(hp)
+
+    by_pos = dict(heads)
+    out = []
+    for pos, day, clock in times:
+        head_pos = chosen.get(pos)
+        if head_pos is None:
+            continue
+        opened = min(pos, head_pos)
+        url = _last_before(anchors, opened, "")
+        room = _last_before(rooms, opened, "")
+        out.append(
+            {
+                "date": day,
+                "time": clock,
+                "title": by_pos[head_pos],
+                "venue": room.replace("-", " ").title() if room else venue,
+                "url": url if url.startswith("http") else origin.rstrip("/") + url,
+            }
+        )
+    return sorted(out, key=lambda e: (e["date"], e["title"]))

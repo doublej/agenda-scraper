@@ -1,0 +1,30 @@
+{
+ "parser": "time_cards",
+ "args": {
+  "venue": "",
+  "origin": "https://www.spotgroningen.nl/programma/"
+ },
+ "events": [
+  {
+   "date": "2026-09-02",
+   "time": "20:30",
+   "title": "The 502s",
+   "venue": "A Theater",
+   "url": "https://www.spotgroningen.nl/programma/greyhounds/"
+  },
+  {
+   "date": "2026-09-03",
+   "time": "20:00",
+   "title": "Greyhounds",
+   "venue": "A Theater",
+   "url": "https://www.spotgroningen.nl/programma/greyhounds/"
+  },
+  {
+   "date": "2026-09-04",
+   "time": "20:00",
+   "title": "Kishi Bashi",
+   "venue": "Oosterpoort",
+   "url": "https://www.spotgroningen.nl/programma/kishi-bashi/"
+  }
+ ]
+}
