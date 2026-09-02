@@ -43,6 +43,10 @@ published route files, locally or over HTTPS.
 
 - An event is a flat `dict[str, str]` (`agenda_scraper.Event`). A missing field is
   `""`, never absent — TSV columns and route files depend on it.
+- Dedupe compares the act, not the room: podiuminfo writes "Gzuz @ Melkweg" for
+  the gig Melkweg calls "GZUZ", so `_title_key` drops the tail after "@". The
+  winner keeps every field it states and fills only its blanks from the copy it
+  drops — which is where half the feed's start times come from.
 - Cheapest tier first: API > JSON-LD > microdata > `<time datetime>` cards >
   rendered browser. Never add a Chrome-based scraper for a site that publishes
   structured data. `loop/probe_sources.py` answers which tier a candidate has.
@@ -88,6 +92,13 @@ published route files, locally or over HTTPS.
   the parser, not the transport, is almost always what broke.
 - **Add a route** → `plan_routes()` in `publish/routes.py`; `_prune()` removes stale
   files, and its subdirectory list needs the new prefix.
+- **A source publishes no times** → check where they are before adding requests.
+  Some listings print the time above the date (bounded both ways already); some
+  state it only on the event page — add the name to `DETAIL_TIMES`
+  (`scrape/cards.py`) and `cards()` fetches each timeless event, a second apart,
+  via `read_time()`. Sample five pages first: four of the ten candidates
+  returned a time five times out of five and the rest returned none, and each
+  entry costs one request per timeless event (~8 minutes a run today).
 - **A venue is spelt two ways** → one line in `VENUE_ALIAS` (`entities/resolve.py`),
   keyed on the flattened slug. Check `_trim_venue` first: punctuation and room
   suffixes are already handled.
