@@ -3,7 +3,8 @@
  "args": {
   "venue": "Annabel",
   "origin": "https://www.annabel.nu/agenda",
-  "dates": "dutch"
+  "dates": "dutch",
+  "links": "after"
  },
  "events": [
   {
@@ -11,21 +12,42 @@
    "time": "",
    "title": "Zomerclub – Elke vrijdag & zaterdag in Anna’s Café",
    "venue": "Annabel",
-   "url": "https://www.annabel.nu/agenda"
+   "url": "https://annabel.nu/zomerclub-in-annas-cafe/"
   },
   {
    "date": "2026-09-05",
    "time": "",
    "title": "bratty • w/ charli xcx & other brat coded artists • rotterdam",
    "venue": "Annabel",
-   "url": "https://annabel.nu/zomerclub-in-annas-cafe/"
+   "url": "https://annabel.nu/bratty-5-september/"
   },
   {
    "date": "2026-09-11",
    "time": "",
    "title": "Wepa Bunny Party",
    "venue": "Annabel",
-   "url": "https://annabel.nu/bratty-5-september/"
+   "url": "https://annabel.nu/badbunny/"
+  },
+  {
+   "date": "2026-09-19",
+   "time": "",
+   "title": "Locura & Remember The Time presents: Zeca Nha Reinalda, Koning van Funaná",
+   "venue": "Annabel",
+   "url": "https://annabel.nu/locura/"
+  },
+  {
+   "date": "2026-09-25",
+   "time": "",
+   "title": "Vroeg Pieken",
+   "venue": "Annabel",
+   "url": "https://annabel.nu/vroeg-pieken-september/"
+  },
+  {
+   "date": "2026-09-26",
+   "time": "",
+   "title": "Hiz Ya Wiz",
+   "venue": "Annabel",
+   "url": "https://annabel.nu/hizyawiz/"
   }
  ]
 }

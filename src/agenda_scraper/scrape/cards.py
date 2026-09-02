@@ -24,13 +24,15 @@ _ANCHOR = re.compile(r'<a[^>]+href="([^"#]+)"')
 _LOCATION = re.compile(r'data-location="([^"]+)"')
 _CLOCK = re.compile(r"\b([01]?\d|2[0-3]):([0-5]\d)\b")
 _TAGS = re.compile(r"<[^>]+>")
-# Gebr. de Nobel repeats the day as an <h3> above each group. A heading that is
-# only a date names no act, and left in it wins the pairing over the real title.
-_DATE_HEADING = re.compile(
-    r"^(?:[a-z]{2,9}\.?,?\s+)?\d{0,2}\s*(?:jan|feb|mrt|maa|apr|mei|jun|jul|aug|"
-    r"sep|okt|oct|nov|dec)[a-z]*\.?(?:\s+20\d\d)?$",
-    re.IGNORECASE,
+# Gebr. de Nobel repeats the day as an <h3> above each group, and Melkweg heads
+# a run of dates with the range they span. A heading that is only a date, or
+# only a date range, names no act, and left in it wins the pairing over the
+# real title. Both sides must be dates: "Jimmy Carr - Laughs funny" is an act.
+_ONE_DATE = (
+    r"(?:[a-z]{2,9}\.?,?\s+)?\d{0,2}\s*(?:jan|feb|mrt|maa|apr|mei|jun|jul|aug|"
+    r"sep|okt|oct|nov|dec)[a-z]*\.?(?:\s+20\d\d)?"
 )
+_DATE_HEADING = re.compile(rf"^{_ONE_DATE}(?:\s*[-–—]\s*{_ONE_DATE})?$", re.IGNORECASE)
 
 NL_MONTHS = {
     "jan": 1, "feb": 2, "mrt": 3, "maa": 3, "apr": 4, "mei": 5, "jun": 6,
@@ -122,7 +124,11 @@ def _written_dates(pattern: re.Pattern[str], text: str) -> list[tuple[int, str, 
 
 
 def parse_cards(
-    html: str, venue: str = "", origin: str = "", dates: str = "time"
+    html: str,
+    venue: str = "",
+    origin: str = "",
+    dates: str = "time",
+    links: str = "before",
 ) -> list[Event]:
     """Pair every date on a listing page with the heading nearest to it.
 
@@ -131,6 +137,14 @@ def parse_cards(
     the event's own URL. Listings put the date before the title (013) or after
     it (Spot, Victorie), so position, not order, decides which heading belongs
     to which date, and each heading is claimed once, nearest date first.
+
+    `links` says where the card keeps its own <a>. Most wrap the whole card in
+    one ("before"); Melkweg, Neushoorn and Annabel instead end the card with a
+    "Tickets & info" link ("after"), and reading backwards there hands every
+    event the *previous* card's URL — Neushoorn got 0 of 103 right. There is no
+    positional rule that suits both: measured over all fourteen listings,
+    reading backwards scores 92-97% on the eleven and 0-5% on the three, and
+    reading forwards exactly inverts that. So it is per-site, like `dates`.
     """
     if dates == "time":
         found = _iso_dates(html)
@@ -183,7 +197,11 @@ def parse_cards(
             continue
         seen.add((day, title))
         opened = min(pos, head_pos)
-        url = _last_before(anchors, opened)
+        url = (
+            _first_after(anchors, opened, NEAR)
+            if links == "after"
+            else _last_before(anchors, opened)
+        )
         room = _last_before(rooms, opened)
         out.append(
             {
@@ -205,6 +223,11 @@ def parse_cards(
 # where the date is written. Every one of these was checked against its own
 # robots.txt; the ticketing platform they mostly share, stager.co, forbids
 # crawling outright, which is why the venue's own page is what gets fetched.
+# The three listings that end a card with its own "Tickets & info" link rather
+# than wrapping the whole card in one. Everywhere else the link leads, so the
+# default reads backwards; see the `links` note in parse_cards for the numbers.
+LINKS_AFTER = {"melkweg", "neushoorn", "annabel"}
+
 CARD_SOURCES = {
     # name: (url, venue, city, date source)
     "013": ("https://www.013.nl/programma", "013", "Tilburg", "time"),

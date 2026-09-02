@@ -3,7 +3,8 @@
  "args": {
   "venue": "Vera",
   "origin": "https://www.vera-groningen.nl/programma/",
-  "dates": "dutch"
+  "dates": "dutch",
+  "links": "before"
  },
  "events": [
   {
@@ -11,21 +12,42 @@
    "time": "",
    "title": "Holy Wave",
    "venue": "Vera",
-   "url": "https://www.vera-groningen.nl/?post_type=events&p=152958&lang=en"
+   "url": "https://www.vera-groningen.nl/?post_type=events&p=152958&lang=nl"
   },
   {
    "date": "2026-09-02",
    "time": "",
    "title": "Kelderbar Open",
    "venue": "Vera",
-   "url": "https://www.vera-groningen.nl/?post_type=events&p=152730&lang=en"
+   "url": "https://www.vera-groningen.nl/?post_type=events&p=152730&lang=nl"
   },
   {
    "date": "2026-09-03",
    "time": "",
    "title": "Kelderbar Open",
    "venue": "Vera",
-   "url": "https://www.vera-groningen.nl/?post_type=events&p=152729&lang=en"
+   "url": "https://www.vera-groningen.nl/?post_type=events&p=152729&lang=nl"
+  },
+  {
+   "date": "2026-09-04",
+   "time": "",
+   "title": "Kelderbar Open",
+   "venue": "Vera",
+   "url": "https://www.vera-groningen.nl/?post_type=events&p=152708&lang=nl"
+  },
+  {
+   "date": "2026-09-04",
+   "time": "",
+   "title": "Wyatt E.",
+   "venue": "Vera",
+   "url": "https://www.vera-groningen.nl/?post_type=events&p=151029&lang=nl"
+  },
+  {
+   "date": "2026-09-05",
+   "time": "22:30",
+   "title": "dort.",
+   "venue": "Vera",
+   "url": "https://www.vera-groningen.nl/?post_type=events&p=153761&lang=nl"
   }
  ]
 }

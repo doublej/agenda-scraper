@@ -3,7 +3,8 @@
  "args": {
   "venue": "Effenaar",
   "origin": "https://www.effenaar.nl/agenda",
-  "dates": "dutch"
+  "dates": "dutch",
+  "links": "before"
  },
  "events": [
   {
@@ -26,6 +27,34 @@
    "title": "RONDÉ",
    "venue": "Effenaar",
    "url": "https://www.effenaar.nl/agenda/ronde-18okt"
+  },
+  {
+   "date": "2026-10-29",
+   "time": "",
+   "title": "BLØF | Extra show",
+   "venue": "Effenaar",
+   "url": "https://www.effenaar.nl/agenda/blof-29okt"
+  },
+  {
+   "date": "2026-11-05",
+   "time": "",
+   "title": "The Fatal Flowers",
+   "venue": "Effenaar",
+   "url": "https://www.effenaar.nl/agenda/fatal-flowers"
+  },
+  {
+   "date": "2026-11-06",
+   "time": "",
+   "title": "Durum Night",
+   "venue": "Effenaar",
+   "url": "https://www.effenaar.nl/agenda/durum-night"
+  },
+  {
+   "date": "2027-01-29",
+   "time": "",
+   "title": "Erwin Nyhoff & The Prodigal Sons",
+   "venue": "Effenaar",
+   "url": "https://www.effenaar.nl/agenda"
   }
  ]
 }

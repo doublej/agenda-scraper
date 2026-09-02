@@ -3,29 +3,58 @@
  "args": {
   "venue": "013",
   "origin": "https://www.013.nl/programma",
-  "dates": "time"
+  "dates": "time",
+  "links": "before"
  },
  "events": [
   {
-   "date": "2026-09-03",
+   "date": "2026-10-28",
    "time": "20:00",
-   "title": "Davina Michelle",
+   "title": "Beast In Black",
    "venue": "013",
-   "url": "https://www.013.nl/programma/126493/davina-michelle"
+   "url": "https://www.013.nl/programma"
   },
   {
-   "date": "2026-09-03",
+   "date": "2026-10-28",
    "time": "20:00",
-   "title": "Draaimolen Opening Concert",
+   "title": "Geoff Tate's Operation: Mindcrime",
    "venue": "013",
-   "url": "https://www.013.nl/programma/144915/draaimolen-opening-concert"
+   "url": "https://www.013.nl/programma/124342/geoff-tates-operation-mindcrime"
   },
   {
-   "date": "2026-09-04",
-   "time": "20:15",
-   "title": "Sander Kwarten",
+   "date": "2026-10-29",
+   "time": "20:00",
+   "title": "Axel Flóvent",
    "venue": "013",
-   "url": "https://www.013.nl/programma/127074/sander-kwarten"
+   "url": "https://www.013.nl/programma/125430/axel-flóvent"
+  },
+  {
+   "date": "2026-10-29",
+   "time": "20:00",
+   "title": "Caravan Palace",
+   "venue": "013",
+   "url": "https://www.013.nl/programma/129922/caravan-palace"
+  },
+  {
+   "date": "2026-10-29",
+   "time": "20:00",
+   "title": "Elmer",
+   "venue": "013",
+   "url": "https://www.013.nl/programma/128268/elmer"
+  },
+  {
+   "date": "2026-10-30",
+   "time": "20:00",
+   "title": "40UP",
+   "venue": "013",
+   "url": "https://www.013.nl/programma/124715/40up"
+  },
+  {
+   "date": "2026-10-30",
+   "time": "18:30",
+   "title": "KamFest",
+   "venue": "013",
+   "url": "https://www.013.nl/programma/126463/kamfest"
   }
  ]
 }
