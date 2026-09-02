@@ -69,14 +69,16 @@ def _in_text(html: str, pos: int, back: int = 300) -> bool:
     return seg.rfind(">") >= seg.rfind("<")
 
 
-def _last_before(items: list[tuple[int, str]], pos: int, default: str) -> str:
-    """The last value whose match started before `pos` — the card's own attribute."""
-    found = default
-    for start, value in items:
-        if start > pos:
-            break
-        found = value
-    return found
+def _last_before(items: list[tuple[int, str]], pos: int) -> str:
+    """The card's own attribute: the last value that started at or before `pos`."""
+    i = bisect_right(items, (pos, "\uffff")) - 1
+    return items[i][1] if i >= 0 else ""
+
+
+def _first_after(items: list[tuple[int, str]], pos: int, within: int) -> str:
+    """The first value starting within `within` characters after `pos`."""
+    i = bisect_left(items, (pos, ""))
+    return items[i][1] if i < len(items) and items[i][0] - pos <= within else ""
 
 
 def _iso_dates(html: str) -> list[tuple[int, str, str]]:
@@ -181,13 +183,12 @@ def parse_cards(
             continue
         seen.add((day, title))
         opened = min(pos, head_pos)
-        url = _last_before(anchors, opened, "")
-        room = _last_before(rooms, opened, "")
-        near_clock = [c for p, c in clocks if 0 <= p - pos <= CLOCK_NEAR]
+        url = _last_before(anchors, opened)
+        room = _last_before(rooms, opened)
         out.append(
             {
                 "date": day,
-                "time": clock or (near_clock[0] if near_clock else ""),
+                "time": clock or _first_after(clocks, pos, CLOCK_NEAR),
                 "title": title,
                 "venue": room.replace("-", " ").title() if room else venue,
                 # urljoin, not concatenation: `origin` is the listing page, so
