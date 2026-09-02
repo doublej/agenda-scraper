@@ -1,6 +1,6 @@
 """Dedupe, the horizon and the health assessment."""
 
-from agenda_scraper.publish import assess, current, dedupe, slugify
+from agenda_scraper.publish import annotate, as_tsv, assess, current, dedupe, slugify
 
 
 def test_slugify_flattens_a_city_into_a_url_segment():
@@ -65,3 +65,35 @@ def test_assess_learns_a_norm_and_then_catches_a_silent_regression(tmp_path):
     ]
     # a bad run must not drag the norm down
     assert assess({"a": {"ok": True, "count": 95}}, hist) == []
+
+
+def test_the_tsv_row_still_starts_with_the_nine_legacy_columns():
+    row = {
+        "source": "paradiso",
+        "date": "2026-09-01",
+        "end": "",
+        "time": "20:30",
+        "title": "Bokoesam",
+        "venue": "Paradiso",
+        "city": "Amsterdam",
+        "status": "",
+        "url": "https://www.paradiso.nl/x",
+    }
+    legacy = as_tsv([row]).split("\t")
+    assert legacy[:9] == [
+        "paradiso",
+        "2026-09-01",
+        "",
+        "20:30",
+        "Bokoesam",
+        "Paradiso",
+        "Amsterdam",
+        "",
+        "https://www.paradiso.nl/x",
+    ]
+    # The ids append after them, so a consumer splitting on tabs keeps working.
+    assert as_tsv(annotate([row])).split("\t")[9:] == [
+        "paradiso",
+        "amsterdam",
+        "bokoesam",
+    ]

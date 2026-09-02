@@ -22,6 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 
 from agenda_scraper import Event
+from agenda_scraper.entities.resolve import CITY_ALIAS
 from agenda_scraper.scrape.browser import browser_credentials, render
 from agenda_scraper.scrape.http import get, post_json
 from agenda_scraper.scrape.parsers import (
@@ -251,10 +252,4 @@ SOURCE_CITY = {
     "musicon": "Den Haag",
 }
 
-# One spelling per city, so /city/<slug> does not split in two.
-CITY_ALIAS = {
-    "The Hague": "Den Haag",
-    "'s-Gravenhage": "Den Haag",
-    "Den Bosch": "'s-Hertogenbosch",
-    "Amsterdam-Zuidoost": "Amsterdam",
-}
+__all__ = ["CITY_ALIAS", "SOURCES", "SOURCE_CITY"]

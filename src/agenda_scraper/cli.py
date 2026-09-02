@@ -6,7 +6,7 @@ from pathlib import Path
 import click
 
 from agenda_scraper.config import BASELINE, DATA_DIR
-from agenda_scraper.publish import dedupe, write_out
+from agenda_scraper.publish import annotate, dedupe, write_out
 from agenda_scraper.scrape import SOURCES, collect
 
 
@@ -37,7 +37,7 @@ def scrape(names: tuple[str, ...], every: bool, out: Path | None) -> None:
     events, report = collect(chosen)
     if out:
         sys.exit(write_out(out, events, report, BASELINE, log=_stderr))
-    for e in dedupe(events):
+    for e in dedupe(annotate(events)):
         click.echo(
             "\t".join(
                 (
