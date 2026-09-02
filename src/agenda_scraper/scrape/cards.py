@@ -23,6 +23,15 @@ _ANCHOR = re.compile(r'<a[^>]+href="([^"#]+)"')
 # Spot runs three buildings off one listing and says which on the card itself.
 _LOCATION = re.compile(r'data-location="([^"]+)"')
 _CLOCK = re.compile(r"\b([01]?\d|2[0-3]):([0-5]\d)\b")
+# Hedon writes the door time as a time-only <time datetime="19:00">. That is the
+# act's own start, stated by the template, so it beats anything found by
+# proximity — take it before falling back to a clock in the text.
+_TIME_ONLY = re.compile(r'<time[^>]*\bdatetime="(\d{1,2}:\d\d)"')
+# A page's <script> and <style> blocks are full of clocks that are not door
+# times: "createdAt":"...T12:03:58", datePublished, Angular state. Melkweg's
+# listing has 809 such matches and 2 real ones. Blanking the blocks (rather
+# than cutting them) keeps every other offset in the document unchanged.
+_SCRIPT = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.DOTALL | re.IGNORECASE)
 _TAGS = re.compile(r"<[^>]+>")
 # Gebr. de Nobel repeats the day as an <h3> above each group, and Melkweg heads
 # a run of dates with the range they span. A heading that is only a date, or
@@ -81,6 +90,24 @@ def _first_after(items: list[tuple[int, str]], pos: int, within: int) -> str:
     """The first value starting within `within` characters after `pos`."""
     i = bisect_left(items, (pos, ""))
     return items[i][1] if i < len(items) and items[i][0] - pos <= within else ""
+
+
+def _nearest(items: list[tuple[int, str]], pos: int, within: int) -> str:
+    """The closest value either side of `pos`, or "" if none is within `within`.
+
+    A card puts its time above the date as readily as below it — AFAS Live has
+    all eighteen of its start times *before* the date, so looking only forward
+    found none of them. Bounded both ways so a card without a time cannot
+    borrow its neighbour's.
+    """
+    i = bisect_left(items, (pos, ""))
+    near = []
+    if i < len(items):
+        near.append((items[i][0] - pos, items[i][1]))
+    if i:
+        near.append((pos - items[i - 1][0], items[i - 1][1]))
+    best = min(near, default=None, key=lambda c: c[0])
+    return best[1] if best and best[0] <= within else ""
 
 
 def _iso_dates(html: str) -> list[tuple[int, str, str]]:
@@ -159,11 +186,19 @@ def parse_cards(
     ]
     anchors = [(m.start(), m.group(1)) for m in _ANCHOR.finditer(html)]
     rooms = [(m.start(), m.group(1)) for m in _LOCATION.finditer(html)]
-    clocks = [
-        (m.start(), m.group(0))
-        for m in _CLOCK.finditer(html)
-        if _in_text(html, m.start())
-    ]
+    # A time the template states outright beats one found by sitting nearby, so
+    # <time datetime="19:00"> wins; a clock in the visible text is the fallback.
+    # Script and style blocks are blanked first: the clocks in them are publish
+    # timestamps and framework state, never door times.
+    text_only = _SCRIPT.sub(lambda m: " " * len(m.group(0)), html)
+    clocks = sorted(
+        [(m.start(), m.group(1)) for m in _TIME_ONLY.finditer(html)]
+        + [
+            (m.start(), m.group(0))
+            for m in _CLOCK.finditer(text_only)
+            if _in_text(text_only, m.start())
+        ]
+    )
 
     # Only headings within NEAR of a date can win it, and both lists are already
     # in document order — so bisect the window instead of building the full cross
@@ -206,7 +241,7 @@ def parse_cards(
         out.append(
             {
                 "date": day,
-                "time": clock or _first_after(clocks, pos, CLOCK_NEAR),
+                "time": clock or _nearest(clocks, pos, CLOCK_NEAR),
                 "title": title,
                 "venue": room.replace("-", " ").title() if room else venue,
                 # urljoin, not concatenation: `origin` is the listing page, so
@@ -227,6 +262,12 @@ def parse_cards(
 # than wrapping the whole card in one. Everywhere else the link leads, so the
 # default reads backwards; see the `links` note in parse_cards for the numbers.
 LINKS_AFTER = {"melkweg", "neushoorn", "annabel"}
+
+# Listings that print no door time but whose event pages do, reliably enough to
+# be worth a request each: five sampled pages, five times, on all four. The ones
+# deliberately left out yielded 0 of 5 (Melkweg, Gebr. de Nobel, Annabel) or too
+# few to pay for the fetches (AFAS Live 1 of 5, Vera 2 of 5).
+DETAIL_TIMES = {"effenaar", "burgerweeshuis", "patronaat", "hedon"}
 
 CARD_SOURCES = {
     # name: (url, venue, city, date source)

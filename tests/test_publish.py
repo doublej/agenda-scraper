@@ -137,3 +137,54 @@ def test_two_spellings_of_one_venue_plan_a_single_route():
     assert len(paths) == len(set(paths)), "a route path is advertised twice"
     venues = [(path, len(evs)) for path, _, evs in routes if path.startswith("venue/")]
     assert venues == [("venue/mezz", VENUE_MIN_EVENTS + 2)]
+
+
+def _pair():
+    """The same gig from a venue that states no time and an aggregator that does."""
+    base = {
+        "source": "",
+        "date": "2026-09-05",
+        "end": "",
+        "time": "",
+        "title": "Bokoesam",
+        "venue": "Paradiso",
+        "city": "",
+        "status": "",
+        "url": "",
+    }
+    return (
+        {**base, "source": "paradiso", "url": "https://paradiso.nl/x"},
+        {
+            **base,
+            "source": "podiuminfo",
+            "time": "20:30",
+            "city": "Amsterdam",
+            "url": "https://podiuminfo.nl/y",
+        },
+    )
+
+
+def test_dedupe_takes_the_time_from_the_copy_it_drops():
+    """Half the venue listings print no door time; the aggregators nearly always do.
+
+    Dropping the duplicate outright published the gig timeless because the more
+    trustworthy source was the quieter one. The venue still wins every field it
+    actually states — only its blanks get filled.
+    """
+    venue, aggregator = _pair()
+    (e,) = dedupe(annotate([venue, aggregator]))
+    assert e["source"] == "paradiso"
+    assert e["url"] == "https://paradiso.nl/x"  # never the aggregator's link
+    assert e["time"] == "20:30"
+    assert e["city"] == "Amsterdam" and e["city_id"] == "amsterdam"
+
+
+def test_the_fill_does_not_depend_on_which_copy_arrives_first():
+    venue, aggregator = _pair()
+    for order in ([venue, aggregator], [aggregator, venue]):
+        (e,) = dedupe(annotate(order))
+        assert (e["source"], e["time"], e["url"]) == (
+            "paradiso",
+            "20:30",
+            "https://paradiso.nl/x",
+        )
