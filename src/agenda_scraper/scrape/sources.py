@@ -29,13 +29,19 @@ from functools import partial
 from agenda_scraper import Event
 from agenda_scraper.entities.resolve import CITY_ALIAS
 from agenda_scraper.scrape.browser import browser_credentials, render
-from agenda_scraper.scrape.cards import CARD_SOURCES, LINKS_AFTER, parse_cards
+from agenda_scraper.scrape.cards import (
+    CARD_SOURCES,
+    DETAIL_TIMES,
+    LINKS_AFTER,
+    parse_cards,
+)
 from agenda_scraper.scrape.http import get, post_json
 from agenda_scraper.scrape.parsers import (
     parse_jsonld,
     parse_microdata,
     parse_paradiso,
     parse_tivoli,
+    read_time,
     unescape,
 )
 
@@ -184,10 +190,32 @@ def wp_events(base: str, venue: str, per_page: int = 100) -> list[Event]:
 
 
 def cards(
-    url: str, venue: str = "", dates: str = "time", links: str = "before"
+    url: str,
+    venue: str = "",
+    dates: str = "time",
+    links: str = "before",
+    details: bool = False,
 ) -> list[Event]:
-    """A listing whose only structure is a date next to a heading."""
-    return parse_cards(get(url), venue, url, dates, links)
+    """A listing whose only structure is a date next to a heading.
+
+    `details` opens each event that the listing left timeless and reads the
+    start off its own page, one request a second. Four listings earn that:
+    Effenaar, Burgerweeshuis, Patronaat and Hedon state the time on the event
+    page and nowhere else, which is 460 gigs published without one. A page that
+    fails or states nothing leaves the event exactly as it was.
+    """
+    events = parse_cards(get(url), venue, url, dates, links)
+    if not details:
+        return events
+    for e in events:
+        if e["time"] or not e["url"]:
+            continue
+        try:
+            e["time"] = read_time(get(e["url"]))
+        except OSError:
+            pass  # one unreachable event page must not lose the whole listing
+        time.sleep(1)
+    return events
 
 
 def partyflock(months: int = 3) -> list[Event]:
@@ -294,7 +322,12 @@ __all__ = ["CITY_ALIAS", "SOURCES", "SOURCE_CITY"]
 SOURCES.update(
     {
         name: partial(
-            cards, url, venue, dates, "after" if name in LINKS_AFTER else "before"
+            cards,
+            url,
+            venue,
+            dates,
+            "after" if name in LINKS_AFTER else "before",
+            name in DETAIL_TIMES,
         )
         for name, (url, venue, _, dates) in CARD_SOURCES.items()
     }

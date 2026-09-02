@@ -54,8 +54,21 @@ SOURCE_RANK = (
 FIELDS = LEGACY_FIELDS + ENTITY_FIELDS
 
 
+# podiuminfo names the room in the title: "Gzuz @ Melkweg" for the gig Melkweg
+# itself lists as "GZUZ". Half its rows are shaped that way.
+_AT_VENUE = re.compile(r"\s+@\s+.*$")
+
+
 def _title_key(title: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "", title.lower())
+    """The act, not the room a source chose to append to it.
+
+    The two copies of one gig never matched, so both were published — and the
+    venue's copy is the one without a door time, because half the venue
+    listings print none. Dedupe already demands the same day and the same
+    resolved venue, so whatever follows the "@" is that venue by construction
+    and cannot merge two different rooms.
+    """
+    return re.sub(r"[^a-z0-9]+", "", _AT_VENUE.sub("", title).lower())
 
 
 def venue_id(event: Event) -> str:
@@ -97,9 +110,31 @@ def dedupe(events: list[Event]) -> list[Event]:
             best[id(e)] = e
             continue
         cur = best.get(key)
-        if cur is None or rank.get(e["source"], 99) < rank.get(cur["source"], 99):
+        if cur is None:
             best[key] = e
+        elif rank.get(e["source"], 99) < rank.get(cur["source"], 99):
+            best[key] = _fill_gaps(e, cur)
+        else:
+            best[key] = _fill_gaps(cur, e)
     return sorted(best.values(), key=lambda e: (e["date"], e["time"], e["title"]))
+
+
+def _fill_gaps(winner: Event, loser: Event) -> Event:
+    """Keep the winner's account of the event, but take what it does not have.
+
+    A venue outranks an aggregator on its own programme, and rightly so — but
+    half the venue listings never print a door time, while podiuminfo and
+    Partyflock state one for nearly every row. Dropping the duplicate outright
+    threw that away: the same gig was published timeless because the better
+    source happened to be the quieter one. Only empty fields are filled, so the
+    winner still decides every fact it actually states.
+
+    Both events are already annotated and share a venue_id (dedupe only groups
+    on a resolved one), so a filled `city` arrives with its matching `city_id`
+    and the pair cannot disagree.
+    """
+    gaps = {k: v for k, v in loser.items() if v and not winner.get(k)}
+    return {**winner, **gaps} if gaps else winner
 
 
 def current(events: list[Event], today: str | None = None) -> list[Event]:

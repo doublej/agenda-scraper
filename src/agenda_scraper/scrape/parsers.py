@@ -202,3 +202,35 @@ def parse_microdata(html: str) -> list[Event]:
             }
         )
     return [e for e in out if e["title"]]
+
+
+# Half the venue listings print no door time, but the event's own page nearly
+# always does — either as a full JSON-LD startDate or as a Dutch sentence.
+# "Start Swingo 23:30" is why the cue may be followed by words before the clock.
+_DOOR = re.compile(
+    r"(?:aanvang|deuren?\s*open(?:\s*om)?|start|begint|inloop)\b[^0-9<]{0,25}"
+    r"\b([01]?\d|2[0-3]):([0-5]\d)\b",
+    re.IGNORECASE,
+)
+_SCRIPTS = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.DOTALL | re.IGNORECASE)
+
+
+def read_time(html: str) -> str:
+    """The start time from an event's own page, for listings that omit it.
+
+    Structured first: a JSON-LD startDate that carries a clock. The literal
+    HH:MM is taken rather than converted, exactly as parse_jsonld does — some
+    of these sites stamp a local time with a spurious Z, and "correcting" it
+    would move a 21:00 doors to 23:00.
+    """
+    for node in jsonld_nodes(html):
+        if not re.search(r"Event|Festival", str(node.get("@type", ""))):
+            continue
+        if m := re.search(
+            r"T([01]\d|2[0-3]):([0-5]\d)", str(node.get("startDate", ""))
+        ):
+            return m.group(0)[1:]
+    text = _TAGS_ONLY.sub(" ", _SCRIPTS.sub(" ", html))
+    if m := _DOOR.search(text):
+        return f"{int(m.group(1)):02d}:{m.group(2)}"
+    return ""
