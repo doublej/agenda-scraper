@@ -121,6 +121,39 @@ refresh timer itself stopped.
 - `status` reflects the last scrape, up to 6 hours old, and only the venue
   scrapers set it. Confirm on `url` before telling anyone a show is sold out.
 
+## MCP
+
+The same feed as an MCP server — stdio, python3, stdlib only, no install step —
+for clients that would rather call tools than fetch URLs:
+
+    {
+      "mcpServers": {
+        "uitagenda": {
+          "type": "stdio",
+          "command": "python3",
+          "args": ["/home/jurrejan/development/agenda-scraper/system/mcp/uitagenda_mcp.py"],
+          "env": {"AGENDA_DATA_DIR": "/home/jurrejan/development/agenda-scraper/data"}
+        }
+      }
+    }
+
+Source: https://github.com/doublej/agenda-scraper. Drop `AGENDA_DATA_DIR` when
+the checkout is not on the machine running the server — it then reads this site
+over HTTPS instead, same documents either way.
+
+    search(query, city, venue, days=14, from_date, to_date, limit=20)
+        Events matching every filter given, soonest first. Words in `query` must
+        all appear in the title, venue or city.
+    cities()
+        Every city with its event count. Call it when a city search comes back
+        empty: city matching is exact on the name.
+    venues(city, query, limit=30)
+        Venue names as the feed spells them — what search(venue=…) matches on.
+
+Every answer carries a `feed` block with `generated_at`, `healthy` and a `stale`
+warning past 8 hours; `search` adds a `coverage` note when the window runs past
+45 days.
+
 ## Recipes
 
     # what is on in Utrecht this week

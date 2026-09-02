@@ -72,6 +72,31 @@ select {
   padding:9px 10px; font:inherit; color:var(--ink);
   background:var(--card); border:1px solid var(--line); border-radius:8px;
 }
+.btn {
+  padding:9px 12px; font:inherit; font-size:13.5px; cursor:pointer;
+  color:var(--ink-soft); background:var(--card);
+  border:1px solid var(--line); border-radius:8px; white-space:nowrap;
+}
+.btn:hover { border-color:color-mix(in srgb, var(--ink) 25%, var(--line)); }
+.btn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.btn.primary { color:var(--card); background:var(--ink); border-color:var(--ink); }
+
+dialog#sheet {
+  width:min(720px, 92vw); padding:0; color:var(--ink); background:var(--card);
+  border:1px solid var(--line); border-radius:12px;
+}
+dialog#sheet::backdrop { background:color-mix(in srgb, #000 55%, transparent); }
+.sheet-head { display:flex; align-items:baseline; gap:10px; padding:16px 18px 8px; }
+.sheet-head h2 { margin:0; font-size:16px; font-weight:650; }
+.sheet-head p { margin:0; flex:1; color:var(--ink-faint); font-size:12.5px; }
+dialog#sheet textarea {
+  display:block; width:calc(100% - 36px); height:44vh; margin:0 18px; padding:12px;
+  font:12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color:var(--ink); background:var(--bg); resize:vertical;
+  border:1px solid var(--line); border-radius:8px;
+}
+.sheet-foot { display:flex; gap:8px; justify-content:flex-end; padding:12px 18px 16px; }
+
 .chips { display:flex; flex-wrap:wrap; gap:6px; width:100%; }
 .chip {
   padding:5px 11px; font:inherit; font-size:13px; cursor:pointer;
@@ -141,10 +166,23 @@ footer a { color:var(--ink-soft); }
       <option value="93">komend kwartaal</option>
       <option value="0">alles</option>
     </select>
+    <button class="btn" id="llm-open">Kopieer voor LLM</button>
     <div class="chips" id="chips"></div>
   </div>
 
   <main id="list"></main>
+
+  <dialog id="sheet">
+    <div class="sheet-head">
+      <h2>Voor een LLM</h2>
+      <p id="sheet-note"></p>
+    </div>
+    <textarea id="sheet-text" readonly spellcheck="false"></textarea>
+    <div class="sheet-foot">
+      <button class="btn" id="sheet-close">Sluiten</button>
+      <button class="btn primary" id="sheet-copy">Kopieer</button>
+    </div>
+  </dialog>
 
   <footer>
     Ruwe data: <a href="events.json">events.json</a> · <a href="events.tsv">events.tsv</a> ·
@@ -251,6 +289,66 @@ function drawChips() {
   });
 }
 
+// ── the LLM hand-off ─────────────────────────────────────────────────────────
+// Hands over instructions, not data: how the routes and the MCP server work, so
+// the model can fetch what it needs itself and keep working after this tab is
+// closed. The text is llm.txt verbatim — one source of truth, so the modal
+// cannot drift from the documentation the feed ships.
+function slug(name) {
+  return name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+             .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function sourceUrl() {
+  const city = document.getElementById("city").value;
+  const base = location.origin;
+  if (!city) return `${base}/events.json`;
+  return +document.getElementById("range").value <= 7
+    ? `${base}/city/${slug(city)}/week.json`
+    : `${base}/city/${slug(city)}.json`;
+}
+
+function intro() {
+  return [
+    "Hieronder staat de handleiding bij de uitagenda-feed: welke endpoints er zijn,",
+    "wat de velden betekenen, en hoe je hem als MCP-server draait.",
+    `Deze selectie in de agenda: ${sourceUrl()}`,
+    "", "",
+  ].join("\n");
+}
+
+function openSheet() {
+  const area = document.getElementById("sheet-text");
+  const note = document.getElementById("sheet-note");
+  document.getElementById("sheet-copy").textContent = "Kopieer";
+  area.value = "laden…";
+  note.textContent = "endpoints en MCP";
+  document.getElementById("sheet").showModal();
+  fetch("llm.txt", { cache: "no-store" })
+    .then((r) => (r.ok ? r.text() : Promise.reject(new Error(r.status))))
+    .then((doc) => {
+      area.value = intro() + doc;
+      note.textContent = `endpoints en MCP · ${Math.round(area.value.length / 1024)} kB`;
+    })
+    .catch(() => {
+      area.value = intro() +
+        `Kon llm.txt niet laden — lees hem rechtstreeks: ${location.origin}/llm.txt`;
+    });
+}
+
+function copySheet() {
+  const area = document.getElementById("sheet-text");
+  const btn = document.getElementById("sheet-copy");
+  const done = () => { btn.textContent = "Gekopieerd ✓"; };
+  // Clipboard access is refused outside a secure context and in some embedded
+  // views; the selection fallback still works there.
+  navigator.clipboard.writeText(area.value).then(done, () => {
+    area.select();
+    document.execCommand("copy");
+    done();
+  });
+}
+
 function drawMeta() {
   const gen = new Date(DATA.generated_at);
   const ageH = (Date.now() - gen) / 36e5;
@@ -281,6 +379,13 @@ fetch("events.json", { cache: "no-store" })
 document.getElementById("q").oninput = render;
 document.getElementById("range").onchange = render;
 document.getElementById("city").onchange = render;
+document.getElementById("llm-open").onclick = openSheet;
+document.getElementById("sheet-copy").onclick = copySheet;
+document.getElementById("sheet-close").onclick = () => document.getElementById("sheet").close();
+// Clicking the backdrop closes it; clicks inside the dialog land on a child.
+document.getElementById("sheet").onclick = (e) => {
+  if (e.target.id === "sheet") e.target.close();
+};
 </script>
 </body>
 </html>
