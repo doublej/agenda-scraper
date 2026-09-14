@@ -218,7 +218,7 @@ With a checkout on the same machine, point at it instead and the server reads
 `data/` off the disk rather than this site — same documents either way:
 
     "command": "uv",
-    "args": ["run", "--directory", "/home/jurrejan/development/agenda-scraper",
+    "args": ["run", "--directory", "/path/to/agenda-scraper",
              "agenda-scraper", "mcp"]
 
 Source: https://github.com/doublej/agenda-scraper. `AGENDA_DATA_DIR` and
