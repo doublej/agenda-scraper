@@ -269,6 +269,9 @@ def enrich_from_detail(
             "time": d["time"] or e["time"],
             "title": d["title"] or e["title"],
             "venue": d["venue"] or e["venue"],
+            "lat": d["lat"] or e.get("lat", ""),
+            "lon": d["lon"] or e.get("lon", ""),
+            "address": d["address"] or e.get("address", ""),
         }
 
     with ThreadPoolExecutor(max_workers=workers) as pool:

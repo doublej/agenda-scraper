@@ -1,4 +1,6 @@
-"""Dedupe, the horizon and the health assessment."""
+"""Dedupe, the horizon, the health assessment and the archive."""
+
+import json
 
 from agenda_scraper.publish import (
     VENUE_MIN_EVENTS,
@@ -9,7 +11,9 @@ from agenda_scraper.publish import (
     dedupe,
     plan_routes,
     slugify,
+    write_out,
 )
+from agenda_scraper.publish.archive import ARCHIVE_FILE, dump, load, merge
 
 
 def test_slugify_flattens_a_city_into_a_url_segment():
@@ -101,7 +105,7 @@ def test_the_tsv_row_still_starts_with_the_nine_legacy_columns():
         "https://www.paradiso.nl/x",
     ]
     # The ids append after them, so a consumer splitting on tabs keeps working.
-    assert as_tsv(annotate([row])).split("\t")[9:] == [
+    assert as_tsv(annotate([row])).split("\t")[9:12] == [
         "paradiso",
         "amsterdam",
         "bokoesam",
@@ -188,3 +192,86 @@ def test_the_fill_does_not_depend_on_which_copy_arrives_first():
             "20:30",
             "https://paradiso.nl/x",
         )
+
+
+def _gig(**fields):
+    base = {
+        "source": "paradiso",
+        "date": "2026-09-05",
+        "end": "",
+        "time": "20:30",
+        "title": "Bokoesam",
+        "venue": "Paradiso",
+        "city": "Amsterdam",
+        "status": "",
+        "url": "https://paradiso.nl/x",
+    }
+    return annotate([{**base, **fields}])[0]
+
+
+def test_an_archived_event_survives_a_run_that_no_longer_scrapes_it(tmp_path):
+    report = {"paradiso": {"ok": True, "count": 1}}
+    gone, kept = _gig(title="Gone"), _gig(title="Kept")
+    write_out(tmp_path, [gone, kept], report, tmp_path / "h.json", log=lambda _: None)
+    write_out(tmp_path, [kept], report, tmp_path / "h.json", log=lambda _: None)
+    titles = {r["title"] for r in load(tmp_path / ARCHIVE_FILE).values()}
+    assert titles == {"Gone", "Kept"}
+
+
+def test_a_later_sighting_updates_a_field_but_never_blanks_one():
+    first = merge({}, [_gig(status="")], "2026-09-01T10:00:00Z")
+    later = merge(first, [_gig(time="", status="Sold out")], "2026-09-02T10:00:00Z")
+    (row,) = later.values()
+    assert (row["time"], row["status"]) == ("20:30", "Sold out")
+    assert (row["first_seen"], row["last_seen"]) == (
+        "2026-09-01T10:00:00Z",
+        "2026-09-02T10:00:00Z",
+    )
+
+
+def test_the_venue_copy_and_the_aggregator_copy_archive_as_one_row():
+    rows = merge({}, [_gig()], "2026-09-01T10:00:00Z")
+    rows = merge(rows, [_gig(title="Bokoesam @ Paradiso")], "2026-09-02T10:00:00Z")
+    assert len(rows) == 1
+
+
+def test_merging_is_idempotent_and_survives_a_round_trip(tmp_path):
+    once = merge({}, [_gig()], "2026-09-01T10:00:00Z")
+    assert merge(once, [_gig()], "2026-09-01T10:00:00Z") == once
+    (tmp_path / ARCHIVE_FILE).write_text(dump(once))
+    assert load(tmp_path / ARCHIVE_FILE) == once
+
+
+def test_an_older_snapshot_fills_gaps_but_does_not_overwrite_newer_facts():
+    newer = merge({}, [_gig(status="Sold out", time="")], "2026-09-02T10:00:00Z")
+    (row,) = merge(newer, [_gig(status="")], "2026-08-20T10:00:00Z").values()
+    assert (row["status"], row["time"]) == ("Sold out", "20:30")
+    assert (row["first_seen"], row["last_seen"]) == (
+        "2026-08-20T10:00:00Z",
+        "2026-09-02T10:00:00Z",
+    )
+
+
+def test_a_finished_event_leaves_the_feed_but_stays_in_its_archive_month(tmp_path):
+    report = {"paradiso": {"ok": True, "count": 1}}
+    past = _gig(date="2025-03-14", title="Over")
+    write_out(tmp_path, [past], report, tmp_path / "h.json", log=lambda _: None)
+    feed = json.loads((tmp_path / "events.json").read_text())
+    month = json.loads((tmp_path / "archive" / "2025-03.json").read_text())
+    index = json.loads((tmp_path / "archive" / "index.json").read_text())
+    assert feed["events"] == []
+    assert [e["title"] for e in month["events"]] == ["Over"]
+    assert month["events"][0]["first_seen"] == month["events"][0]["last_seen"]
+    assert [(m["month"], m["count"]) for m in index["months"]] == [("2025-03", 1)]
+    assert index["months"][0]["json"] == "/archive/2025-03.json"
+    routes = json.loads((tmp_path / "routes.json").read_text())["routes"]
+    assert {"archive/2025-03", "archive/index"} <= {r["route"] for r in routes}
+
+
+def test_the_archive_plans_one_route_per_start_month():
+    rows = [
+        {**_gig(date=d), "first_seen": "x", "last_seen": "x"}
+        for d in ("2025-03-01", "2025-03-30", "2025-04-02")
+    ]
+    months = [(p, len(r)) for p, _, r in plan_routes([], rows) if "archive" in p]
+    assert months == [("archive/2025-03", 2), ("archive/2025-04", 1)]

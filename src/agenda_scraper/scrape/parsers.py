@@ -32,6 +32,15 @@ def _as_dict(value: object) -> dict:
     return value if isinstance(value, dict) else {}
 
 
+_COORD = re.compile(r"-?\d{1,3}(?:\.\d+)?")
+
+
+def _coord(value: object) -> str:
+    """A latitude or longitude as the site wrote it; "" when it is not a number."""
+    text = "" if value is None else str(value).strip().replace(",", ".")
+    return text if _COORD.fullmatch(text) else ""
+
+
 def jsonld_nodes(html: str) -> list[dict]:
     """Every dict in every ld+json block, with @graph and ItemList flattened."""
     out = []
@@ -68,6 +77,9 @@ def parse_jsonld(html: str) -> list[Event]:
         end = (node.get("endDate") or "")[:10]
         loc = _as_dict(node.get("location"))
         addr = _as_dict(loc.get("address"))
+        geo = _as_dict(loc.get("geo"))
+        # Some sites write the whole address as one string instead of a dict.
+        street = loc.get("address") if isinstance(loc.get("address"), str) else ""
         out.append(
             {
                 "date": start[:10],
@@ -78,6 +90,9 @@ def parse_jsonld(html: str) -> list[Event]:
                 "city": addr.get("addressLocality", "").strip(),
                 "country": addr.get("addressCountry", ""),
                 "url": node.get("url", ""),
+                "lat": _coord(geo.get("latitude")),
+                "lon": _coord(geo.get("longitude")),
+                "address": unescape(str(addr.get("streetAddress") or street)),
             }
         )
     return [e for e in out if e["title"]]
@@ -199,6 +214,9 @@ def parse_microdata(html: str) -> list[Event]:
                 "city": _micro(chunk, "addressLocality"),
                 "country": (m.group(1) if (m := _MICRO_COUNTRY.search(chunk)) else ""),
                 "url": _micro(chunk, "url"),
+                "lat": _coord(_micro(chunk, "latitude")),
+                "lon": _coord(_micro(chunk, "longitude")),
+                "address": _micro(chunk, "streetAddress"),
             }
         )
     return [e for e in out if e["title"]]

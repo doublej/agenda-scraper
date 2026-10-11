@@ -11,7 +11,7 @@ the minor for an additive field, the major when an existing key changes meaning.
 
 from typing import NotRequired, TypedDict
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "1.1.0"
 
 # The nine keys every published event has carried since the feed existed. The
 # entity fields append after them; nothing here moves or is renamed.
@@ -27,10 +27,14 @@ LEGACY_FIELDS = (
     "url",
 )
 ENTITY_FIELDS = ("venue_id", "city_id", "artist_ids")
+# Where it happens: the room, and the venue's coordinates and street address as
+# the source's schema.org location states them. Appended after the ids.
+PLACE_FIELDS = ("room", "lat", "lon", "address")
 
 __all__ = [
     "ENTITY_FIELDS",
     "LEGACY_FIELDS",
+    "PLACE_FIELDS",
     "SCHEMA_VERSION",
     "Artist",
     "City",
@@ -54,6 +58,10 @@ class Event(TypedDict):
     venue_id: str
     city_id: str
     artist_ids: str  # comma-separated Artist ids, "" when none were extracted
+    room: str  # the room the venue label named ("Oude Zaal"), "" when none
+    lat: str  # decimal degrees as the source wrote them, "" when not stated
+    lon: str
+    address: str  # street address, "" when not stated
 
 
 class City(TypedDict):
@@ -71,6 +79,9 @@ class Venue(TypedDict):
     name: str
     city: str
     city_id: str
+    lat: NotRequired[str]  # the registry fills these from the first event that
+    lon: NotRequired[str]  # states them; "" until one does
+    address: NotRequired[str]
     count: NotRequired[int]
 
 

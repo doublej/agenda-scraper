@@ -14,7 +14,7 @@ import re
 from agenda_scraper.entities.models import City, Venue
 from agenda_scraper.entities.slug import slugify
 
-__all__ = ["CITY_ALIAS", "VENUE_ALIAS", "resolve_city", "resolve_venue"]
+__all__ = ["CITY_ALIAS", "VENUE_ALIAS", "resolve_city", "resolve_venue", "venue_room"]
 
 # One spelling per city, so /city/<slug> does not split in two. scrape.collect()
 # applies it while normalising, and resolve_city() applies it again for callers
@@ -110,23 +110,32 @@ def _flat(name: str) -> str:
     return slugify(name).replace("-", "")
 
 
-def _trim_venue(name: str, city: str) -> str:
+def _trim_venue(name: str, city: str) -> tuple[str, str]:
     """Strip the decoration a source hangs off a venue name, and nothing else.
 
-    Deliberately timid: over-trimming merges two real venues into one id, which
-    is a far worse failure than leaving "Melkweg Oude Zaal" as its own label.
+    Returns (venue, room): the room is what was cut, "Oude Zaal" for "Melkweg
+    (Oude Zaal)". Deliberately timid: over-trimming merges two real venues into
+    one id, which is a far worse failure than leaving "Melkweg Oude Zaal" as its
+    own label.
     """
     out = _VENUE_PREFIX.sub("", " ".join(name.split())).strip()
+    room = ""
     for pattern in (_BRACKET_TAIL, _DASH_TAIL):
         m = pattern.search(out)
         if m and _ROOM.search(m.group(1)):
             out = out[: m.start()].strip()
+            room = f"{m.group(1).strip()} {room}".strip()  # the dash tail comes first
     # "Vera, Groningen" -> "Vera", but only when the tail is the city we were
     # handed; a comma inside a name ("Kade, Zaandam") is left alone otherwise.
     head, sep, tail = out.rpartition(",")
     if sep and city and _flat(tail) == _flat(city):
         out = head.strip()
-    return out.strip(" -,|")
+    return out.strip(" -,|"), room
+
+
+def venue_room(name: str, city: str = "") -> str:
+    """The room a venue label names, "" when it names only the building."""
+    return _trim_venue(name, city)[1]
 
 
 def resolve_city(name: str) -> City:
@@ -143,7 +152,7 @@ def resolve_venue(name: str, city: str = "") -> Venue:
     different cities would merge. Prefix the id with the city slug if that ever
     turns up in the registry — nothing outside this function reads the shape.
     """
-    trimmed = _trim_venue(name, city)
+    trimmed = _trim_venue(name, city)[0]
     canonical = VENUE_ALIAS.get(_flat(trimmed), trimmed)
     resolved_city = resolve_city(city)
     if _flat(canonical) in _GENERIC and resolved_city["name"]:

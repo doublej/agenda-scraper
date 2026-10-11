@@ -24,10 +24,13 @@ the slug you want.
   /venues.json                  every venue, with its city and event count
   /cities.json                  every city, with its event count
   /artists.json                 every extracted act, with confidence and count
+  /archive/index.json           every archived month, with count and last_modified
+  /archive/<yyyy-mm>.json       every event ever scraped that starts that month,
+                                past ones included — e.g. /archive/2026-09.json
   /llm.txt  /llms.txt           this file
 
-Every route exists as `.json` and `.tsv`, except the three registries, which
-are JSON only — they hold entity records, not event rows. City, venue and
+Every route exists as `.json` and `.tsv`, except the three registries and
+`/archive/index.json`, which are JSON only — they hold entity records, not event rows. City, venue and
 artist slugs are lowercase ASCII with dashes ("Den Haag" -> `den-haag`);
 `routes.json` has the exact list.
 
@@ -46,7 +49,7 @@ every 15 minutes. Writes are atomic: a `200` is never a partial file.
 Route files share one envelope:
 
     {
-      "schema_version": "1.0.0",                    # semver; minor = added field
+      "schema_version": "1.1.0",                    # semver; minor = added field
       "generated_at": "2026-08-30T16:17:04+0200",   # ISO 8601, Europe/Amsterdam
       "healthy": true,                              # false = see problems
       "problems": [],
@@ -76,12 +79,18 @@ Each event:
     city_id    "amsterdam"       the City in /cities.json. "" when no city named.
     artist_ids "dixon,gizem"     comma-separated Artist ids, "" when none found.
 
-All twelve keys are on every event; absence is `""`, never `null`, never a
-missing key. The nine above the gap are the original ones and keep their order;
-the three ids were appended and nothing else moved. Sorted by
+    room       "Oude Zaal"       the room the venue label named; venue_id stays
+                                 the building. "" when the label named no room.
+    lat        "52.3622"         venue latitude, decimal degrees, as the source's
+    lon        "4.8838"          schema.org location stated it. "" when it did not.
+    address    "Weteringschans 6-8"  street address, same rule.
+
+All sixteen keys are on every event; absence is `""`, never `null`, never a
+missing key. The nine above the first gap are the original ones and keep their
+order; everything after them was appended and nothing else moved. Sorted by
 `(date, time, title)`. Nothing that has already finished is published — an
 event with a past `date` is a festival still running, which is what `end` is
-for.
+for. Finished events live on in the archive, below.
 
 An id is the slug of the entity's canonical name, so it is stable between runs
 and readable in a URL. Match on `venue_id`, not on `venue`: the same room is
@@ -91,10 +100,10 @@ and only the id collapses them.
 `.tsv` is headerless, one event per line, same order, fields never containing
 tabs or newlines:
 
-    source <TAB> date <TAB> end <TAB> time <TAB> title <TAB> venue <TAB> city <TAB> status <TAB> url <TAB> venue_id <TAB> city_id <TAB> artist_ids
+    source <TAB> date <TAB> end <TAB> time <TAB> title <TAB> venue <TAB> city <TAB> status <TAB> url <TAB> venue_id <TAB> city_id <TAB> artist_ids <TAB> room <TAB> lat <TAB> lon <TAB> address
 
 The first nine columns are the original ones, unchanged and in the original
-order; the three ids were appended after them, so `cut -f2,5,7` still means
+order; the later fields were appended after them, so `cut -f2,5,7` still means
 what it always meant.
 
 ## Registries
@@ -102,9 +111,13 @@ what it always meant.
 Three files name the things the events point at. They share the envelope above
 and carry their records under a key matching the file name.
 
-    /venues.json   {"id","name","city","city_id","count"}
+    /venues.json   {"id","name","city","city_id","lat","lon","address","count"}
     /cities.json   {"id","name","count"}
     /artists.json  {"id","name","confidence","count"}
+
+A venue's `lat`, `lon` and `address` come from the first published event that
+states them (JSON-LD and Partyflock's microdata do; card listings do not), and
+are "" until one does.
 
 `count` is how many currently published events belong to that entity, so the
 registries are the cheap way to answer "which venue is busiest in Rotterdam"
@@ -123,6 +136,38 @@ format. `confidence` says how much that rule trusts the name:
 Filter on `confidence == "high"` when precision matters. `/artist/<slug>.json`
 exists only for acts with five or more upcoming dates, which is roughly where
 the false positives stop.
+
+## Archive
+
+The live routes drop an event once it is over; the archive never drops one.
+Every run folds everything it scraped into it, finished or not, so a month
+file holds the past, the present and whatever is announced ahead.
+
+    /archive/index.json   {"months": [{"month": "2026-09", "count": 6120,
+                            "last_modified": "2026-10-11T08:17:04Z",
+                            "json": "/archive/2026-09.json"}, ...]}
+    /archive/2026-09.json the envelope, then "events": every event whose
+                          `date` falls in that month
+
+Each archived event has every key of a live event, in the same order, plus:
+
+    first_seen "2026-08-14T02:17:09Z"  the first run that scraped it, UTC
+    last_seen  "2026-09-05T20:17:41Z"  the last run that scraped it, UTC
+
+One row per `(venue_id, date, title)` — the same match dedupe uses, so the
+venue's copy and the aggregator's are one row. Each field holds the latest
+run's value, but a run that leaves a field empty never blanks one an earlier
+run filled. An event that disappears before its date (cancelled, renamed,
+moved) stays in the archive with an old `last_seen`; treat a `last_seen` well
+before `date` as "may not have happened". A festival files under the month it
+starts — check `end` for the days after.
+
+To sync incrementally, fetch `/archive/index.json` and re-fetch only the months
+whose `last_modified` moved. A month whose events are all over stops moving.
+Do not rely on the HTTP `Last-Modified` header here: every month file is
+rewritten on every run. Archiving began in October 2026; earlier months
+hold only what an older saved snapshot could recover, so they are thin. The `.tsv` of a month route
+has the live columns only, without the two timestamps.
 
 ## Sources
 
@@ -218,7 +263,7 @@ With a checkout on the same machine, point at it instead and the server reads
 `data/` off the disk rather than this site — same documents either way:
 
     "command": "uv",
-    "args": ["run", "--directory", "/home/jurrejan/development/agenda-scraper",
+    "args": ["run", "--directory", "/path/to/agenda-scraper",
              "agenda-scraper", "mcp"]
 
 Source: https://github.com/doublej/agenda-scraper. `AGENDA_DATA_DIR` and

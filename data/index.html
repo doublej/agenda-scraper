@@ -302,7 +302,7 @@ function paint() {
         <li class="ev">
           <span class="t">${esc(e.time || "—")}</span>
           <span class="name">
-            <a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.title)}</a>
+            <a href="${/^https?:\/\//i.test(e.url || "") ? esc(e.url) : "#"}" target="_blank" rel="noopener">${esc(e.title)}</a>
             ${e.status ? `<span class="badge">${esc(e.status)}</span>` : ""}
             <span class="where">${esc(e.venue || LABEL[e.source] || e.source)}${
             e.city ? " · " + esc(e.city) : ""}</span>
