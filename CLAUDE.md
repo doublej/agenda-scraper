@@ -25,6 +25,7 @@ src/agenda_scraper/
 │   └── artists.py    # extract_artists(): heuristic lineup split + confidence
 ├── publish/
 │   ├── feed.py       # annotate → dedupe → horizon → TSV → health assessment
+│   ├── archive.py    # append-only data/archive.jsonl: every event ever scraped
 │   └── routes.py     # plan_routes → registries → route files → routes.json
 └── scrape/
     ├── __init__.py   # collect(): run sources, normalise city, survive failures
@@ -66,6 +67,10 @@ published route files, locally or over HTTPS.
   resolve ids, so the arrow only ever points that way.
 - The nine legacy event keys keep their names and their TSV order; `venue_id`,
   `city_id` and `artist_ids` were appended after them. New fields append, full stop.
+- `data/archive.jsonl` is history that exists nowhere else: events only ever
+  enter it, a later run never blanks a field, and an unreadable file fails the
+  run rather than being rewritten. `archive-import <events.json>` folds an old
+  snapshot in at its own `generated_at`.
 - `/venue/<slug>` stays keyed on the published label, not on `venue_id` — re-keying
   it would rename live URLs.
 - Parsers stay pure and stay tested. Anything that needs the network belongs in

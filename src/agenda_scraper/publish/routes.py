@@ -264,6 +264,13 @@ def write_routes(
     return index
 
 
+def archive_events(out_dir: Path, events: list[Event], seen: str) -> dict[str, Event]:
+    """Fold events seen at `seen` (UTC) into out_dir's archive file; return it all."""
+    archive = merge(load(out_dir / ARCHIVE_FILE), events, seen)
+    _write(out_dir / ARCHIVE_FILE, dump(archive))
+    return archive
+
+
 def write_out(
     out_dir: Path,
     events: list[Event],
@@ -290,8 +297,7 @@ def write_out(
     # Everything scraped, finished or not. An unreadable archive raises here and
     # fails the run, rather than being overwritten with this one run's events.
     seen = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    archive = merge(load(out_dir / ARCHIVE_FILE), scraped, seen)
-    _write(out_dir / ARCHIVE_FILE, dump(archive))
+    archive = archive_events(out_dir, scraped, seen)
     index = write_routes(out_dir, events, envelope, published(archive))
     # One small file to poll: a monitor should not download the whole feed to
     # find out the timer stopped running.
@@ -313,4 +319,11 @@ def write_out(
     return 1 if problems else 0
 
 
-__all__ = ["build_registries", "plan_routes", "venue_id", "write_out", "write_routes"]
+__all__ = [
+    "archive_events",
+    "build_registries",
+    "plan_routes",
+    "venue_id",
+    "write_out",
+    "write_routes",
+]
