@@ -111,6 +111,8 @@ def test_a_generated_feed_matches_every_schema(tmp_path):
         log=lambda _: None,
     )
     assert validate_feed(tmp_path / "feed") == []
+    month = _sample_events()[0]["date"][:7]
+    assert (tmp_path / "feed" / "archive" / f"{month}.json").exists()
     envelope = json.loads((tmp_path / "feed" / "events.json").read_text())
     assert envelope["schema_version"] == SCHEMA_VERSION
 
@@ -212,3 +214,27 @@ def test_the_event_typeddict_the_tsv_and_the_schema_all_agree():
     assert FIELDS == LEGACY_FIELDS + ENTITY_FIELDS
     assert tuple(schema["required"]) == FIELDS
     assert tuple(schema["properties"]) == FIELDS
+
+
+def test_an_archived_event_is_a_live_event_plus_its_sightings():
+    from agenda_scraper.publish.archive import SEEN_FIELDS
+
+    schema = json.loads((SCHEMA_DIR / "archive-event.schema.json").read_text())
+    assert tuple(schema["required"]) == FIELDS + SEEN_FIELDS
+    assert tuple(schema["properties"]) == FIELDS + SEEN_FIELDS
+
+
+def test_the_schema_tells_an_archive_month_from_a_live_route(tmp_path):
+    """An archived row without its sightings fails, and so does a live row with them."""
+    out = tmp_path / "feed"
+    report = {"paradiso": {"ok": True, "count": 1}}
+    write_out(out, _sample_events(), report, tmp_path / "h.json", log=lambda _: None)
+    month = next((out / "archive").glob("????-??.json"))
+    doc = json.loads(month.read_text())
+    del doc["events"][0]["last_seen"]
+    month.write_text(json.dumps(doc))
+    live = json.loads((out / "all.json").read_text())
+    live["events"][0]["first_seen"] = "2026-09-01T10:00:00Z"
+    (out / "all.json").write_text(json.dumps(live))
+    broken = {p.split(":")[0] for p in validate_feed(out)}
+    assert broken == {f"archive/{month.name}", "all.json"}

@@ -11,7 +11,7 @@ the minor for an additive field, the major when an existing key changes meaning.
 
 from typing import NotRequired, TypedDict
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "1.1.0"
 
 # The nine keys every published event has carried since the feed existed. The
 # entity fields append after them; nothing here moves or is renamed.

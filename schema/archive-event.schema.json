@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "archive-event.schema.json",
+  "title": "Archived event",
+  "description": "An event row from /archive/<yyyy-mm>.json: every Event key, then when a run first and last scraped it (UTC). Fields hold the last sighting's value; a later run never blanks one an earlier run filled.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source",
+    "date",
+    "end",
+    "time",
+    "title",
+    "venue",
+    "city",
+    "status",
+    "url",
+    "venue_id",
+    "city_id",
+    "artist_ids",
+    "first_seen",
+    "last_seen"
+  ],
+  "properties": {
+    "source": { "$ref": "event.schema.json#/properties/source" },
+    "date": { "$ref": "event.schema.json#/properties/date" },
+    "end": { "$ref": "event.schema.json#/properties/end" },
+    "time": { "$ref": "event.schema.json#/properties/time" },
+    "title": { "$ref": "event.schema.json#/properties/title" },
+    "venue": { "$ref": "event.schema.json#/properties/venue" },
+    "city": { "$ref": "event.schema.json#/properties/city" },
+    "status": { "$ref": "event.schema.json#/properties/status" },
+    "url": { "$ref": "event.schema.json#/properties/url" },
+    "venue_id": { "$ref": "event.schema.json#/properties/venue_id" },
+    "city_id": { "$ref": "event.schema.json#/properties/city_id" },
+    "artist_ids": { "$ref": "event.schema.json#/properties/artist_ids" },
+    "first_seen": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" },
+    "last_seen": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" }
+  }
+}

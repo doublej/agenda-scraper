@@ -77,3 +77,28 @@ def published(archive: dict[str, Event]) -> list[Event]:
     """
     rows = [{f: r.get(f, "") for f in FIELDS + SEEN_FIELDS} for r in archive.values()]
     return sorted(rows, key=lambda e: (e["date"], e["time"], e["title"]))
+
+
+def by_month(rows: list[Event]) -> dict[str, list[Event]]:
+    """Archived rows per start month ("2026-09"); a festival files under its first day."""
+    out: dict[str, list[Event]] = {}
+    for e in rows:
+        out.setdefault(e["date"][:7], []).append(e)
+    return out
+
+
+def month_index(rows: list[Event]) -> list[dict]:
+    """What /archive/index.json lists: one entry per month a reader can poll.
+
+    `last_modified` is the newest last_seen in the month, which is the last run
+    that could have changed it — a month whose events are all over stops moving.
+    """
+    return [
+        {
+            "month": month,
+            "count": len(group),
+            "last_modified": max(e["last_seen"] for e in group),
+            "json": f"/archive/{month}.json",
+        }
+        for month, group in sorted(by_month(rows).items())
+    ]

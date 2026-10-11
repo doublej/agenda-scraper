@@ -1,4 +1,6 @@
-"""Dedupe, the horizon and the health assessment."""
+"""Dedupe, the horizon, the health assessment and the archive."""
+
+import json
 
 from agenda_scraper.publish import (
     VENUE_MIN_EVENTS,
@@ -248,3 +250,28 @@ def test_an_older_snapshot_fills_gaps_but_does_not_overwrite_newer_facts():
         "2026-08-20T10:00:00Z",
         "2026-09-02T10:00:00Z",
     )
+
+
+def test_a_finished_event_leaves_the_feed_but_stays_in_its_archive_month(tmp_path):
+    report = {"paradiso": {"ok": True, "count": 1}}
+    past = _gig(date="2025-03-14", title="Over")
+    write_out(tmp_path, [past], report, tmp_path / "h.json", log=lambda _: None)
+    feed = json.loads((tmp_path / "events.json").read_text())
+    month = json.loads((tmp_path / "archive" / "2025-03.json").read_text())
+    index = json.loads((tmp_path / "archive" / "index.json").read_text())
+    assert feed["events"] == []
+    assert [e["title"] for e in month["events"]] == ["Over"]
+    assert month["events"][0]["first_seen"] == month["events"][0]["last_seen"]
+    assert [(m["month"], m["count"]) for m in index["months"]] == [("2025-03", 1)]
+    assert index["months"][0]["json"] == "/archive/2025-03.json"
+    routes = json.loads((tmp_path / "routes.json").read_text())["routes"]
+    assert {"archive/2025-03", "archive/index"} <= {r["route"] for r in routes}
+
+
+def test_the_archive_plans_one_route_per_start_month():
+    rows = [
+        {**_gig(date=d), "first_seen": "x", "last_seen": "x"}
+        for d in ("2025-03-01", "2025-03-30", "2025-04-02")
+    ]
+    months = [(p, len(r)) for p, _, r in plan_routes([], rows) if "archive" in p]
+    assert months == [("archive/2025-03", 2), ("archive/2025-04", 1)]
