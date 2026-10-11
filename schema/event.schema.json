@@ -17,7 +17,8 @@
     "url",
     "venue_id",
     "city_id",
-    "artist_ids"
+    "artist_ids",
+    "room"
   ],
   "properties": {
     "source": { "type": "string", "minLength": 1 },
@@ -35,6 +36,10 @@
       "type": "string",
       "pattern": "^([a-z0-9-]+(,[a-z0-9-]+)*)?$",
       "description": "Comma-separated Artist ids, in the order the title named them."
+    },
+    "room": {
+      "type": "string",
+      "description": "The room the venue label named (\"Oude Zaal\" for \"Melkweg (Oude Zaal)\"); \"\" when it named only the building."
     }
   }
 }

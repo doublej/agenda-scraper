@@ -13,9 +13,11 @@ from agenda_scraper import Event, Report
 from agenda_scraper.entities import (
     ENTITY_FIELDS,
     LEGACY_FIELDS,
+    PLACE_FIELDS,
     extract_artists,
     resolve_city,
     resolve_venue,
+    venue_room,
 )
 
 # Aggregators list the same night as the venue itself. Lower index wins, so a
@@ -49,9 +51,9 @@ SOURCE_RANK = (
     "festivalinfo",
 )
 
-# The nine legacy columns first, in their original order, then the entity ids.
-# Appending is the only change a consumer splitting on tabs survives.
-FIELDS = LEGACY_FIELDS + ENTITY_FIELDS
+# The nine legacy columns first, in their original order, then the entity ids,
+# then the place. Appending is the only change a consumer splitting on tabs survives.
+FIELDS = LEGACY_FIELDS + ENTITY_FIELDS + PLACE_FIELDS
 
 
 # podiuminfo names the room in the title: "Gzuz @ Melkweg" for the gig Melkweg
@@ -80,7 +82,7 @@ def venue_id(event: Event) -> str:
 
 
 def annotate(events: list[Event]) -> list[Event]:
-    """Add venue_id, city_id and artist_ids. Idempotent, and never rewrites a key."""
+    """Add venue_id, city_id, artist_ids and room. Idempotent; never rewrites a key."""
     out = []
     for e in events:
         artists = extract_artists(e.get("title", ""))
@@ -90,6 +92,7 @@ def annotate(events: list[Event]) -> list[Event]:
                 "venue_id": resolve_venue(e.get("venue", ""), e.get("city", ""))["id"],
                 "city_id": resolve_city(e.get("city", ""))["id"],
                 "artist_ids": ",".join(a["id"] for a in artists),
+                "room": venue_room(e.get("venue", ""), e.get("city", "")),
             }
         )
     return out

@@ -27,10 +27,13 @@ LEGACY_FIELDS = (
     "url",
 )
 ENTITY_FIELDS = ("venue_id", "city_id", "artist_ids")
+# Where in the venue it happens, appended after the ids.
+PLACE_FIELDS = ("room",)
 
 __all__ = [
     "ENTITY_FIELDS",
     "LEGACY_FIELDS",
+    "PLACE_FIELDS",
     "SCHEMA_VERSION",
     "Artist",
     "City",
@@ -54,6 +57,7 @@ class Event(TypedDict):
     venue_id: str
     city_id: str
     artist_ids: str  # comma-separated Artist ids, "" when none were extracted
+    room: str  # the room the venue label named ("Oude Zaal"), "" when none
 
 
 class City(TypedDict):

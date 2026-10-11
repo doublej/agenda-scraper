@@ -18,12 +18,14 @@ from referencing import Registry, Resource
 
 from agenda_scraper.entities import (
     LEGACY_FIELDS,
+    PLACE_FIELDS,
     SCHEMA_VERSION,
     extract_artists,
     resolve_city,
     resolve_venue,
+    venue_room,
 )
-from agenda_scraper.publish import FIELDS, build_registries, write_out
+from agenda_scraper.publish import FIELDS, annotate, build_registries, write_out
 
 SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schema"
 
@@ -138,7 +140,8 @@ def test_the_tsv_columns_are_the_nine_legacy_ones_then_the_new_ids():
         "status",
         "url",
     )
-    assert FIELDS[9:] == ("venue_id", "city_id", "artist_ids")
+    assert FIELDS[9:12] == ("venue_id", "city_id", "artist_ids")
+    assert FIELDS[12:] == PLACE_FIELDS
 
 
 def test_a_city_resolves_through_its_aliases_to_one_spelling():
@@ -155,6 +158,17 @@ def test_a_venue_loses_its_room_and_its_city_but_never_its_name():
     assert resolve_venue("Paard van Troje", "Den Haag")["name"] == "Paard"
     assert resolve_venue("Gebr. de Nobel", "Leiden")["id"] == "gebr-de-nobel"
     assert resolve_venue("", "")["id"] == ""
+
+
+def test_the_room_a_venue_label_names_is_kept_beside_the_venue_id():
+    assert venue_room("Melkweg (Oude Zaal)", "Amsterdam") == "Oude Zaal"
+    assert venue_room("Paradiso - Grote Zaal", "Amsterdam") == "Grote Zaal"
+    assert venue_room("Vera, Groningen", "Groningen") == ""
+    # Not a room, so not cut: the name and the room both stay as they were.
+    assert venue_room("Paard van Troje", "Den Haag") == ""
+    assert venue_room("Kade (Zaandam)", "") == ""
+    (e,) = annotate([{"venue": "Melkweg (Oude Zaal)", "city": "Amsterdam"}])
+    assert (e["venue_id"], e["room"]) == ("melkweg", "Oude Zaal")
 
 
 def test_the_same_venue_spelt_three_ways_gets_one_id():
@@ -207,11 +221,10 @@ def test_the_event_typeddict_the_tsv_and_the_schema_all_agree():
     and the JSON Schema the published run is validated against.
     """
     from agenda_scraper.entities.models import ENTITY_FIELDS, LEGACY_FIELDS, Event
-    from agenda_scraper.publish import FIELDS
 
     schema = json.loads((SCHEMA_DIR / "event.schema.json").read_text())
     assert tuple(Event.__annotations__) == FIELDS
-    assert FIELDS == LEGACY_FIELDS + ENTITY_FIELDS
+    assert FIELDS == LEGACY_FIELDS + ENTITY_FIELDS + PLACE_FIELDS
     assert tuple(schema["required"]) == FIELDS
     assert tuple(schema["properties"]) == FIELDS
 

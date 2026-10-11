@@ -9,6 +9,7 @@ from agenda_scraper.entities.artists import extract_artists
 from agenda_scraper.entities.models import (
     ENTITY_FIELDS,
     LEGACY_FIELDS,
+    PLACE_FIELDS,
     SCHEMA_VERSION,
     Artist,
     City,
@@ -20,6 +21,7 @@ from agenda_scraper.entities.resolve import (
     VENUE_ALIAS,
     resolve_city,
     resolve_venue,
+    venue_room,
 )
 from agenda_scraper.entities.slug import slugify
 
@@ -27,6 +29,7 @@ __all__ = [
     "CITY_ALIAS",
     "ENTITY_FIELDS",
     "LEGACY_FIELDS",
+    "PLACE_FIELDS",
     "SCHEMA_VERSION",
     "VENUE_ALIAS",
     "Artist",
@@ -37,4 +40,5 @@ __all__ = [
     "resolve_city",
     "resolve_venue",
     "slugify",
+    "venue_room",
 ]

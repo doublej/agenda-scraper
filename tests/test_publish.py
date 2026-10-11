@@ -105,7 +105,7 @@ def test_the_tsv_row_still_starts_with_the_nine_legacy_columns():
         "https://www.paradiso.nl/x",
     ]
     # The ids append after them, so a consumer splitting on tabs keeps working.
-    assert as_tsv(annotate([row])).split("\t")[9:] == [
+    assert as_tsv(annotate([row])).split("\t")[9:12] == [
         "paradiso",
         "amsterdam",
         "bokoesam",
