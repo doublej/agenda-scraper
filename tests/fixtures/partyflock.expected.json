@@ -14,7 +14,10 @@
    "venue": "Out",
    "city": "Amsterdam",
    "country": "NL",
-   "url": "https://partyflock.nl/party/489252:Latin-Wednesday"
+   "url": "https://partyflock.nl/party/489252:Latin-Wednesday",
+   "lat": "52.3631",
+   "lon": "4.88616",
+   "address": ""
   },
   {
    "date": "2026-09-03",
@@ -24,7 +27,10 @@
    "venue": "nachbar",
    "city": "Amsterdam",
    "country": "NL",
-   "url": "https://partyflock.nl/party/494411:Raving-Charlie"
+   "url": "https://partyflock.nl/party/494411:Raving-Charlie",
+   "lat": "52.3721",
+   "lon": "4.89094",
+   "address": ""
   },
   {
    "date": "2026-09-03",
@@ -34,7 +40,10 @@
    "venue": "Amnesia",
    "city": "San Rafael",
    "country": "ES",
-   "url": "https://partyflock.nl/party/497050:Resistnace"
+   "url": "https://partyflock.nl/party/497050:Resistnace",
+   "lat": "38.9499",
+   "lon": "1.41157",
+   "address": ""
   },
   {
    "date": "2026-09-03",
@@ -44,7 +53,10 @@
    "venue": "Twenty Two",
    "city": "Amsterdam",
    "country": "NL",
-   "url": "https://partyflock.nl/party/498067:Soju-Wednesdays"
+   "url": "https://partyflock.nl/party/498067:Soju-Wednesdays",
+   "lat": "52.3639",
+   "lon": "4.8822",
+   "address": ""
   }
  ]
 }

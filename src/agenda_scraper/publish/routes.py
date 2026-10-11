@@ -24,6 +24,15 @@ from agenda_scraper.entities import (
     resolve_venue,
     slugify,
 )
+from agenda_scraper.publish.archive import (
+    ARCHIVE_FILE,
+    by_month,
+    dump,
+    load,
+    merge,
+    month_index,
+    published,
+)
 from agenda_scraper.publish.feed import (
     annotate,
     as_tsv,
@@ -73,8 +82,14 @@ def build_registries(
     for e in events:
         if e.get("venue"):
             v = resolve_venue(e["venue"], e.get("city", ""))
-            hit = venues.setdefault(v["id"], {**v, "count": 0})
+            hit = venues.setdefault(
+                v["id"], {**v, "lat": "", "lon": "", "address": "", "count": 0}
+            )
             hit["count"] = hit.get("count", 0) + 1
+            if not hit.get("lat") and e.get("lat") and e.get("lon"):  # a pair or none
+                hit["lat"], hit["lon"] = e["lat"], e["lon"]
+            if not hit.get("address") and e.get("address"):
+                hit["address"] = e["address"]
             if not hit["city"] and v["city"]:  # first source to name the city wins
                 hit["city"], hit["city_id"] = v["city"], v["city_id"]
         if e.get("city"):
@@ -94,8 +109,14 @@ def build_registries(
     )
 
 
-def plan_routes(events: list[Event]) -> list[tuple[str, str, list[Event]]]:
-    """Every slice worth its own URL, as (path, label, events)."""
+def plan_routes(
+    events: list[Event], archive: list[Event] | None = None
+) -> list[tuple[str, str, list[Event]]]:
+    """Every slice worth its own URL, as (path, label, events).
+
+    `archive` is the published archive (rows with first_seen/last_seen); it
+    adds one route per month, past events included.
+    """
     routes = [("all", "heel Nederland", events)]
     for name, days in WINDOWS:
         routes.append(
@@ -126,6 +147,8 @@ def plan_routes(events: list[Event]) -> list[tuple[str, str, list[Event]]]:
         if len(rows) >= VENUE_MIN_EVENTS:
             routes.append((f"venue/{slug}", label, rows))
     routes += _artist_routes(events)
+    for month, rows in sorted(by_month(archive or []).items()):
+        routes.append((f"archive/{month}", f"archief {month}", rows))
     return routes
 
 
@@ -152,7 +175,7 @@ def _write(path: Path, body: str) -> None:
 
 def _prune(out_dir: Path, keep: set[Path]) -> None:
     """Delete route files from earlier runs whose slice no longer exists."""
-    for sub in ("city", "source", "venue", "artist"):
+    for sub in ("city", "source", "venue", "artist", "archive"):
         for old in sorted((out_dir / sub).rglob("*")):
             if old.is_file() and old not in keep:
                 old.unlink()
@@ -185,12 +208,31 @@ def write_registries(out_dir: Path, events: list[Event], envelope: dict) -> list
     return index
 
 
-def write_routes(out_dir: Path, events: list[Event], envelope: dict) -> list[dict]:
+def _write_archive_index(out_dir: Path, archive: list[Event], envelope: dict) -> dict:
+    """archive/index.json: every archived month, so a reader fetches only what moved."""
+    doc = {**envelope, "route": "archive/index", "label": "archief"}
+    doc |= {"count": len(archive), "months": month_index(archive)}
+    _write(out_dir / "archive" / "index.json", json.dumps(doc, ensure_ascii=False))
+    return {
+        "route": "archive/index",
+        "label": "archief",
+        "count": len(archive),
+        "json": "/archive/index.json",
+        "tsv": "",
+    }
+
+
+def write_routes(
+    out_dir: Path,
+    events: list[Event],
+    envelope: dict,
+    archive: list[Event] | None = None,
+) -> list[dict]:
     """Write every route as JSON+TSV, plus the registries and routes.json."""
     out_dir = Path(out_dir)
     index: list[dict] = []
     written: set[Path] = set()
-    for path, label, rows in plan_routes(events):
+    for path, label, rows in plan_routes(events, archive):
         doc = {
             **envelope,
             "route": path,
@@ -213,6 +255,8 @@ def write_routes(out_dir: Path, events: list[Event], envelope: dict) -> list[dic
                 "tsv": f"/{path}.tsv",
             }
         )
+    index.append(_write_archive_index(out_dir, archive or [], envelope))
+    written.add(out_dir / "archive" / "index.json")
     _prune(out_dir, written)
     index += write_registries(out_dir, events, envelope)
     _write(
@@ -226,6 +270,13 @@ def write_routes(out_dir: Path, events: list[Event], envelope: dict) -> list[dic
     return index
 
 
+def archive_events(out_dir: Path, events: list[Event], seen: str) -> dict[str, Event]:
+    """Fold events seen at `seen` (UTC) into out_dir's archive file; return it all."""
+    archive = merge(load(out_dir / ARCHIVE_FILE), events, seen)
+    _write(out_dir / ARCHIVE_FILE, dump(archive))
+    return archive
+
+
 def write_out(
     out_dir: Path,
     events: list[Event],
@@ -236,7 +287,8 @@ def write_out(
     """Atomic publish of the full feed plus every route. Non-zero when unhealthy."""
     out_dir = Path(out_dir)
     problems = assess(report, history_path)
-    events = dedupe(current(annotate(events)))
+    scraped = dedupe(annotate(events))
+    events = current(scraped)
     envelope = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
@@ -248,7 +300,11 @@ def write_out(
         log(f"# PROBLEM\t{p}")
     _write(out_dir / "events.json", json.dumps(doc, ensure_ascii=False, indent=1))
     _write(out_dir / "events.tsv", as_tsv(events))
-    index = write_routes(out_dir, events, envelope)
+    # Everything scraped, finished or not. An unreadable archive raises here and
+    # fails the run, rather than being overwritten with this one run's events.
+    seen = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    archive = archive_events(out_dir, scraped, seen)
+    index = write_routes(out_dir, events, envelope, published(archive))
     # One small file to poll: a monitor should not download the whole feed to
     # find out the timer stopped running.
     _write(
@@ -265,7 +321,15 @@ def write_out(
         ),
     )
     log(f"# wrote {len(events)} events and {len(index)} routes to {out_dir}")
+    log(f"# archive holds {len(archive)} events")
     return 1 if problems else 0
 
 
-__all__ = ["build_registries", "plan_routes", "venue_id", "write_out", "write_routes"]
+__all__ = [
+    "archive_events",
+    "build_registries",
+    "plan_routes",
+    "venue_id",
+    "write_out",
+    "write_routes",
+]

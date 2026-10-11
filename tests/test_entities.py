@@ -18,12 +18,14 @@ from referencing import Registry, Resource
 
 from agenda_scraper.entities import (
     LEGACY_FIELDS,
+    PLACE_FIELDS,
     SCHEMA_VERSION,
     extract_artists,
     resolve_city,
     resolve_venue,
+    venue_room,
 )
-from agenda_scraper.publish import FIELDS, build_registries, write_out
+from agenda_scraper.publish import FIELDS, annotate, build_registries, write_out
 
 SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schema"
 
@@ -64,6 +66,9 @@ def _sample_events() -> list[dict]:
             "city": "Amsterdam",
             "status": "Sold out",
             "url": "https://www.paradiso.nl/programma/x/1",
+            "lat": "52.3622",
+            "lon": "4.8838",
+            "address": "Weteringschans 6-8",
         },
         {  # the aggregator's copy of the same night, spelt without a city
             "source": "podiuminfo",
@@ -111,6 +116,8 @@ def test_a_generated_feed_matches_every_schema(tmp_path):
         log=lambda _: None,
     )
     assert validate_feed(tmp_path / "feed") == []
+    month = _sample_events()[0]["date"][:7]
+    assert (tmp_path / "feed" / "archive" / f"{month}.json").exists()
     envelope = json.loads((tmp_path / "feed" / "events.json").read_text())
     assert envelope["schema_version"] == SCHEMA_VERSION
 
@@ -136,7 +143,8 @@ def test_the_tsv_columns_are_the_nine_legacy_ones_then_the_new_ids():
         "status",
         "url",
     )
-    assert FIELDS[9:] == ("venue_id", "city_id", "artist_ids")
+    assert FIELDS[9:12] == ("venue_id", "city_id", "artist_ids")
+    assert FIELDS[12:] == PLACE_FIELDS
 
 
 def test_a_city_resolves_through_its_aliases_to_one_spelling():
@@ -153,6 +161,17 @@ def test_a_venue_loses_its_room_and_its_city_but_never_its_name():
     assert resolve_venue("Paard van Troje", "Den Haag")["name"] == "Paard"
     assert resolve_venue("Gebr. de Nobel", "Leiden")["id"] == "gebr-de-nobel"
     assert resolve_venue("", "")["id"] == ""
+
+
+def test_the_room_a_venue_label_names_is_kept_beside_the_venue_id():
+    assert venue_room("Melkweg (Oude Zaal)", "Amsterdam") == "Oude Zaal"
+    assert venue_room("Paradiso - Grote Zaal", "Amsterdam") == "Grote Zaal"
+    assert venue_room("Vera, Groningen", "Groningen") == ""
+    # Not a room, so not cut: the name and the room both stay as they were.
+    assert venue_room("Paard van Troje", "Den Haag") == ""
+    assert venue_room("Kade (Zaandam)", "") == ""
+    (e,) = annotate([{"venue": "Melkweg (Oude Zaal)", "city": "Amsterdam"}])
+    assert (e["venue_id"], e["room"]) == ("melkweg", "Oude Zaal")
 
 
 def test_the_same_venue_spelt_three_ways_gets_one_id():
@@ -195,6 +214,19 @@ def test_the_registries_count_what_was_published(tmp_path):
     assert {a["id"] for a in artists} == {"dixon", "jimi-jules", "gizem"}
 
 
+def test_a_venue_takes_its_coordinates_from_the_first_event_that_states_them():
+    bare, located = annotate(_sample_events()[1:2] + _sample_events()[:1])
+    (venue,) = build_registries([bare, located])[0]
+    assert (venue["id"], venue["lat"], venue["lon"], venue["address"]) == (
+        "paradiso",
+        "52.3622",
+        "4.8838",
+        "Weteringschans 6-8",
+    )
+    (unknown,) = build_registries([bare])[0]
+    assert (unknown["lat"], unknown["lon"], unknown["address"]) == ("", "", "")
+
+
 def test_the_event_typeddict_the_tsv_and_the_schema_all_agree():
     """Three declarations of one shape, kept honest against each other.
 
@@ -205,10 +237,33 @@ def test_the_event_typeddict_the_tsv_and_the_schema_all_agree():
     and the JSON Schema the published run is validated against.
     """
     from agenda_scraper.entities.models import ENTITY_FIELDS, LEGACY_FIELDS, Event
-    from agenda_scraper.publish import FIELDS
 
     schema = json.loads((SCHEMA_DIR / "event.schema.json").read_text())
     assert tuple(Event.__annotations__) == FIELDS
-    assert FIELDS == LEGACY_FIELDS + ENTITY_FIELDS
+    assert FIELDS == LEGACY_FIELDS + ENTITY_FIELDS + PLACE_FIELDS
     assert tuple(schema["required"]) == FIELDS
     assert tuple(schema["properties"]) == FIELDS
+
+
+def test_an_archived_event_is_a_live_event_plus_its_sightings():
+    from agenda_scraper.publish.archive import SEEN_FIELDS
+
+    schema = json.loads((SCHEMA_DIR / "archive-event.schema.json").read_text())
+    assert tuple(schema["required"]) == FIELDS + SEEN_FIELDS
+    assert tuple(schema["properties"]) == FIELDS + SEEN_FIELDS
+
+
+def test_the_schema_tells_an_archive_month_from_a_live_route(tmp_path):
+    """An archived row without its sightings fails, and so does a live row with them."""
+    out = tmp_path / "feed"
+    report = {"paradiso": {"ok": True, "count": 1}}
+    write_out(out, _sample_events(), report, tmp_path / "h.json", log=lambda _: None)
+    month = next((out / "archive").glob("????-??.json"))
+    doc = json.loads(month.read_text())
+    del doc["events"][0]["last_seen"]
+    month.write_text(json.dumps(doc))
+    live = json.loads((out / "all.json").read_text())
+    live["events"][0]["first_seen"] = "2026-09-01T10:00:00Z"
+    (out / "all.json").write_text(json.dumps(live))
+    broken = {p.split(":")[0] for p in validate_feed(out)}
+    assert broken == {f"archive/{month.name}", "all.json"}

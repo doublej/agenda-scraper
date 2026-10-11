@@ -1,12 +1,15 @@
 """The one entry point: scrape, publish, serve over MCP, check reachability."""
 
+import json
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
 
 from agenda_scraper.config import BASELINE, DATA_DIR
 from agenda_scraper.publish import annotate, dedupe, write_out
+from agenda_scraper.publish.routes import archive_events
 from agenda_scraper.scrape import SOURCES, collect
 
 
@@ -52,6 +55,35 @@ def scrape(names: tuple[str, ...], every: bool, out: Path | None) -> None:
                 )
             )
         )
+
+
+@main.command("archive-import")
+@click.argument(
+    "snapshots",
+    nargs=-1,
+    required=True,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+)
+@click.option(
+    "--out",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=DATA_DIR,
+    show_default=True,
+    help="The data dir whose archive to fold into.",
+)
+def archive_import(snapshots: tuple[Path, ...], out: Path) -> None:
+    """Fold saved events.json files into the archive, to recover past events.
+
+    Each snapshot counts as seen at its own generated_at, so an old one fills
+    gaps without overwriting what later runs found. The archive/ routes pick
+    the result up on the next `scrape --out` run.
+    """
+    for snap in snapshots:
+        doc = json.loads(snap.read_text(encoding="utf8"))
+        when = datetime.strptime(doc["generated_at"], "%Y-%m-%dT%H:%M:%S%z")
+        seen = when.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        archive = archive_events(out, dedupe(annotate(doc["events"])), seen)
+        click.echo(f"{snap}: {len(doc['events'])} events, archive now {len(archive)}")
 
 
 @main.command()

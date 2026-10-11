@@ -10,6 +10,7 @@ it is readable.
 import json
 import re
 import sys
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -91,7 +92,12 @@ def main() -> None:
     (FIXTURES / f"{name}.html").write_text(snippet, encoding="utf8")
     (FIXTURES / f"{name}.expected.json").write_text(
         json.dumps(
-            {"parser": parser, "args": args, "events": events},
+            {
+                "parser": parser,
+                "args": args,
+                "captured": str(date.today()),
+                "events": events,
+            },
             ensure_ascii=False,
             indent=1,
         )
