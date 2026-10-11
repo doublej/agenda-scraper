@@ -9,7 +9,9 @@ from agenda_scraper.publish import (
     dedupe,
     plan_routes,
     slugify,
+    write_out,
 )
+from agenda_scraper.publish.archive import ARCHIVE_FILE, dump, load, merge
 
 
 def test_slugify_flattens_a_city_into_a_url_segment():
@@ -188,3 +190,61 @@ def test_the_fill_does_not_depend_on_which_copy_arrives_first():
             "20:30",
             "https://paradiso.nl/x",
         )
+
+
+def _gig(**fields):
+    base = {
+        "source": "paradiso",
+        "date": "2026-09-05",
+        "end": "",
+        "time": "20:30",
+        "title": "Bokoesam",
+        "venue": "Paradiso",
+        "city": "Amsterdam",
+        "status": "",
+        "url": "https://paradiso.nl/x",
+    }
+    return annotate([{**base, **fields}])[0]
+
+
+def test_an_archived_event_survives_a_run_that_no_longer_scrapes_it(tmp_path):
+    report = {"paradiso": {"ok": True, "count": 1}}
+    gone, kept = _gig(title="Gone"), _gig(title="Kept")
+    write_out(tmp_path, [gone, kept], report, tmp_path / "h.json", log=lambda _: None)
+    write_out(tmp_path, [kept], report, tmp_path / "h.json", log=lambda _: None)
+    titles = {r["title"] for r in load(tmp_path / ARCHIVE_FILE).values()}
+    assert titles == {"Gone", "Kept"}
+
+
+def test_a_later_sighting_updates_a_field_but_never_blanks_one():
+    first = merge({}, [_gig(status="")], "2026-09-01T10:00:00Z")
+    later = merge(first, [_gig(time="", status="Sold out")], "2026-09-02T10:00:00Z")
+    (row,) = later.values()
+    assert (row["time"], row["status"]) == ("20:30", "Sold out")
+    assert (row["first_seen"], row["last_seen"]) == (
+        "2026-09-01T10:00:00Z",
+        "2026-09-02T10:00:00Z",
+    )
+
+
+def test_the_venue_copy_and_the_aggregator_copy_archive_as_one_row():
+    rows = merge({}, [_gig()], "2026-09-01T10:00:00Z")
+    rows = merge(rows, [_gig(title="Bokoesam @ Paradiso")], "2026-09-02T10:00:00Z")
+    assert len(rows) == 1
+
+
+def test_merging_is_idempotent_and_survives_a_round_trip(tmp_path):
+    once = merge({}, [_gig()], "2026-09-01T10:00:00Z")
+    assert merge(once, [_gig()], "2026-09-01T10:00:00Z") == once
+    (tmp_path / ARCHIVE_FILE).write_text(dump(once))
+    assert load(tmp_path / ARCHIVE_FILE) == once
+
+
+def test_an_older_snapshot_fills_gaps_but_does_not_overwrite_newer_facts():
+    newer = merge({}, [_gig(status="Sold out", time="")], "2026-09-02T10:00:00Z")
+    (row,) = merge(newer, [_gig(status="")], "2026-08-20T10:00:00Z").values()
+    assert (row["status"], row["time"]) == ("Sold out", "20:30")
+    assert (row["first_seen"], row["last_seen"]) == (
+        "2026-08-20T10:00:00Z",
+        "2026-09-02T10:00:00Z",
+    )

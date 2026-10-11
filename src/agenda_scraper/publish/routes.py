@@ -24,6 +24,7 @@ from agenda_scraper.entities import (
     resolve_venue,
     slugify,
 )
+from agenda_scraper.publish.archive import ARCHIVE_FILE, dump, load, merge
 from agenda_scraper.publish.feed import (
     annotate,
     as_tsv,
@@ -236,7 +237,8 @@ def write_out(
     """Atomic publish of the full feed plus every route. Non-zero when unhealthy."""
     out_dir = Path(out_dir)
     problems = assess(report, history_path)
-    events = dedupe(current(annotate(events)))
+    scraped = dedupe(annotate(events))
+    events = current(scraped)
     envelope = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
@@ -248,6 +250,11 @@ def write_out(
         log(f"# PROBLEM\t{p}")
     _write(out_dir / "events.json", json.dumps(doc, ensure_ascii=False, indent=1))
     _write(out_dir / "events.tsv", as_tsv(events))
+    # Everything scraped, finished or not. An unreadable archive raises here and
+    # fails the run, rather than being overwritten with this one run's events.
+    seen = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    archive = merge(load(out_dir / ARCHIVE_FILE), scraped, seen)
+    _write(out_dir / ARCHIVE_FILE, dump(archive))
     index = write_routes(out_dir, events, envelope)
     # One small file to poll: a monitor should not download the whole feed to
     # find out the timer stopped running.
@@ -265,6 +272,7 @@ def write_out(
         ),
     )
     log(f"# wrote {len(events)} events and {len(index)} routes to {out_dir}")
+    log(f"# archive holds {len(archive)} events")
     return 1 if problems else 0
 
 
