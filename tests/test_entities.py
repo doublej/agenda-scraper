@@ -66,6 +66,9 @@ def _sample_events() -> list[dict]:
             "city": "Amsterdam",
             "status": "Sold out",
             "url": "https://www.paradiso.nl/programma/x/1",
+            "lat": "52.3622",
+            "lon": "4.8838",
+            "address": "Weteringschans 6-8",
         },
         {  # the aggregator's copy of the same night, spelt without a city
             "source": "podiuminfo",
@@ -209,6 +212,19 @@ def test_the_registries_count_what_was_published(tmp_path):
     assert [(v["id"], v["count"]) for v in venues] == [("paradiso", 1)]
     assert [(c["id"], c["count"]) for c in cities] == [("amsterdam", 1)]
     assert {a["id"] for a in artists} == {"dixon", "jimi-jules", "gizem"}
+
+
+def test_a_venue_takes_its_coordinates_from_the_first_event_that_states_them():
+    bare, located = annotate(_sample_events()[1:2] + _sample_events()[:1])
+    (venue,) = build_registries([bare, located])[0]
+    assert (venue["id"], venue["lat"], venue["lon"], venue["address"]) == (
+        "paradiso",
+        "52.3622",
+        "4.8838",
+        "Weteringschans 6-8",
+    )
+    (unknown,) = build_registries([bare])[0]
+    assert (unknown["lat"], unknown["lon"], unknown["address"]) == ("", "", "")
 
 
 def test_the_event_typeddict_the_tsv_and_the_schema_all_agree():

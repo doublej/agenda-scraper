@@ -82,7 +82,7 @@ def venue_id(event: Event) -> str:
 
 
 def annotate(events: list[Event]) -> list[Event]:
-    """Add venue_id, city_id, artist_ids and room. Idempotent; never rewrites a key."""
+    """Add the ids and the place fields. Idempotent; never rewrites a key."""
     out = []
     for e in events:
         artists = extract_artists(e.get("title", ""))
@@ -93,6 +93,9 @@ def annotate(events: list[Event]) -> list[Event]:
                 "city_id": resolve_city(e.get("city", ""))["id"],
                 "artist_ids": ",".join(a["id"] for a in artists),
                 "room": venue_room(e.get("venue", ""), e.get("city", "")),
+                "lat": e.get("lat", ""),
+                "lon": e.get("lon", ""),
+                "address": e.get("address", ""),
             }
         )
     return out

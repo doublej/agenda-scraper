@@ -19,6 +19,9 @@
     "city_id",
     "artist_ids",
     "room",
+    "lat",
+    "lon",
+    "address",
     "first_seen",
     "last_seen"
   ],
@@ -36,6 +39,9 @@
     "city_id": { "$ref": "event.schema.json#/properties/city_id" },
     "artist_ids": { "$ref": "event.schema.json#/properties/artist_ids" },
     "room": { "$ref": "event.schema.json#/properties/room" },
+    "lat": { "$ref": "event.schema.json#/properties/lat" },
+    "lon": { "$ref": "event.schema.json#/properties/lon" },
+    "address": { "$ref": "event.schema.json#/properties/address" },
     "first_seen": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" },
     "last_seen": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" }
   }

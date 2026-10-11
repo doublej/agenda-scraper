@@ -18,7 +18,10 @@
     "venue_id",
     "city_id",
     "artist_ids",
-    "room"
+    "room",
+    "lat",
+    "lon",
+    "address"
   ],
   "properties": {
     "source": { "type": "string", "minLength": 1 },
@@ -40,6 +43,16 @@
     "room": {
       "type": "string",
       "description": "The room the venue label named (\"Oude Zaal\" for \"Melkweg (Oude Zaal)\"); \"\" when it named only the building."
+    },
+    "lat": {
+      "type": "string",
+      "pattern": "^(-?\\d{1,3}(\\.\\d+)?)?$",
+      "description": "The venue's latitude in decimal degrees, as the source's schema.org location stated it; \"\" when it did not."
+    },
+    "lon": { "type": "string", "pattern": "^(-?\\d{1,3}(\\.\\d+)?)?$" },
+    "address": {
+      "type": "string",
+      "description": "The venue's street address as the source stated it; \"\" when it did not."
     }
   }
 }

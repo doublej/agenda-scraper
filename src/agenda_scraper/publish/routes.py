@@ -82,8 +82,14 @@ def build_registries(
     for e in events:
         if e.get("venue"):
             v = resolve_venue(e["venue"], e.get("city", ""))
-            hit = venues.setdefault(v["id"], {**v, "count": 0})
+            hit = venues.setdefault(
+                v["id"], {**v, "lat": "", "lon": "", "address": "", "count": 0}
+            )
             hit["count"] = hit.get("count", 0) + 1
+            if not hit.get("lat") and e.get("lat") and e.get("lon"):  # a pair or none
+                hit["lat"], hit["lon"] = e["lat"], e["lon"]
+            if not hit.get("address") and e.get("address"):
+                hit["address"] = e["address"]
             if not hit["city"] and v["city"]:  # first source to name the city wins
                 hit["city"], hit["city_id"] = v["city"], v["city_id"]
         if e.get("city"):

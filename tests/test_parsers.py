@@ -62,6 +62,9 @@ def test_jsonld_unescapes_and_splits_a_flat_event():
             "city": "",
             "country": "",
             "url": "https://x",
+            "lat": "",
+            "lon": "",
+            "address": "",
         }
     ]
 
@@ -84,8 +87,38 @@ def test_jsonld_flattens_an_itemlist_and_reads_a_postal_address():
             "city": "Vlaardingen",
             "country": "",
             "url": "https://f",
+            "lat": "",
+            "lon": "",
+            "address": "",
         }
     ]
+
+
+def test_jsonld_keeps_the_venue_coordinates_and_street_address():
+    html = (
+        '<script type="application/ld+json">{"@type":"MusicEvent","name":"X",'
+        '"startDate":"2026-09-01T20:00","location":{"@type":"Place",'
+        '"name":"Melkweg (Oude Zaal)","geo":{"@type":"GeoCoordinates",'
+        '"latitude":52.3646,"longitude":"4.8811"},"address":{"streetAddress":'
+        '"Lijnbaansgracht 234A","addressLocality":"Amsterdam"}}}</script>'
+    )
+    (e,) = parse_jsonld(html)
+    assert (e["lat"], e["lon"], e["address"]) == (
+        "52.3646",
+        "4.8811",
+        "Lijnbaansgracht 234A",
+    )
+
+
+def test_jsonld_takes_a_one_line_address_and_refuses_a_coordinate_that_is_not_one():
+    html = (
+        '<script type="application/ld+json">{"@type":"Event","name":"X",'
+        '"startDate":"2026-09-01","location":{"name":"Vera","address":'
+        '"Oosterstraat 44, Groningen","geo":{"latitude":"n/a","longitude":""}}}'
+        "</script>"
+    )
+    (e,) = parse_jsonld(html)
+    assert (e["lat"], e["lon"], e["address"]) == ("", "", "Oosterstraat 44, Groningen")
 
 
 def test_jsonld_ignores_an_unrendered_template():

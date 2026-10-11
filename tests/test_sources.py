@@ -87,6 +87,11 @@ def test_a_parsed_event_carries_a_date_a_title_and_a_resolvable_venue(path):
         assert e["url"].startswith("https://"), e
         segments = [s for s in e["url"].split("/")[3:] if s]
         assert len(segments) < 2 or segments[0] != segments[1], e
+        # A coordinate is a pair on Earth or nothing — never half of one, and
+        # never the two swapped into an impossible latitude.
+        assert bool(e.get("lat")) == bool(e.get("lon")), e
+        if e.get("lat"):
+            assert abs(float(e["lat"])) <= 90 and abs(float(e["lon"])) <= 180, e
     assert resolve_city(city)["id"] or name not in SOURCE_CITY
 
 

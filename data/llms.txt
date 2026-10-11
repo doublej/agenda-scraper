@@ -81,8 +81,11 @@ Each event:
 
     room       "Oude Zaal"       the room the venue label named; venue_id stays
                                  the building. "" when the label named no room.
+    lat        "52.3622"         venue latitude, decimal degrees, as the source's
+    lon        "4.8838"          schema.org location stated it. "" when it did not.
+    address    "Weteringschans 6-8"  street address, same rule.
 
-All thirteen keys are on every event; absence is `""`, never `null`, never a
+All sixteen keys are on every event; absence is `""`, never `null`, never a
 missing key. The nine above the first gap are the original ones and keep their
 order; everything after them was appended and nothing else moved. Sorted by
 `(date, time, title)`. Nothing that has already finished is published — an
@@ -97,7 +100,7 @@ and only the id collapses them.
 `.tsv` is headerless, one event per line, same order, fields never containing
 tabs or newlines:
 
-    source <TAB> date <TAB> end <TAB> time <TAB> title <TAB> venue <TAB> city <TAB> status <TAB> url <TAB> venue_id <TAB> city_id <TAB> artist_ids <TAB> room
+    source <TAB> date <TAB> end <TAB> time <TAB> title <TAB> venue <TAB> city <TAB> status <TAB> url <TAB> venue_id <TAB> city_id <TAB> artist_ids <TAB> room <TAB> lat <TAB> lon <TAB> address
 
 The first nine columns are the original ones, unchanged and in the original
 order; the later fields were appended after them, so `cut -f2,5,7` still means
@@ -108,9 +111,13 @@ what it always meant.
 Three files name the things the events point at. They share the envelope above
 and carry their records under a key matching the file name.
 
-    /venues.json   {"id","name","city","city_id","count"}
+    /venues.json   {"id","name","city","city_id","lat","lon","address","count"}
     /cities.json   {"id","name","count"}
     /artists.json  {"id","name","confidence","count"}
+
+A venue's `lat`, `lon` and `address` come from the first published event that
+states them (JSON-LD and Partyflock's microdata do; card listings do not), and
+are "" until one does.
 
 `count` is how many currently published events belong to that entity, so the
 registries are the cheap way to answer "which venue is busiest in Rotterdam"
