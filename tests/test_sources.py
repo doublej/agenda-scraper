@@ -10,17 +10,24 @@ which trims the page to the smallest snippet that still reproduces the parse.
 
 import json
 import re
+from datetime import date
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from agenda_scraper.entities import resolve_city, resolve_venue
+from agenda_scraper.scrape import cards
 from agenda_scraper.scrape.cards import parse_cards
 from agenda_scraper.scrape.parsers import parse_jsonld, parse_microdata
 from agenda_scraper.scrape.sources import SOURCE_CITY, SOURCES
 
 FIXTURES = Path(__file__).parent / "fixtures"
 GOLDENS = sorted(FIXTURES.glob("*.expected.json"))
+# A bare "5 sep" gets its year from today, and a date more than cards.BACK days
+# behind today is dropped — so a golden only reproduces on the day it was
+# captured. Fixtures from before `captured` was recorded all date from this day.
+CAPTURED = "2026-09-02"
 
 PARSERS = {
     "cards": lambda html, a: parse_cards(
@@ -44,7 +51,15 @@ def _golden(path: Path) -> tuple[str, dict, list]:
     doc = json.loads(path.read_text(encoding="utf8"))
     name = path.name.removesuffix(".expected.json")
     html = (FIXTURES / f"{name}.html").read_text(encoding="utf8")
-    return name, doc, PARSERS[doc["parser"]](html, doc["args"])
+    day = date.fromisoformat(doc.get("captured", CAPTURED))
+
+    class _OnCaptureDay(date):
+        @classmethod
+        def today(cls) -> "_OnCaptureDay":
+            return cls(day.year, day.month, day.day)
+
+    with patch.object(cards, "date", _OnCaptureDay):
+        return name, doc, PARSERS[doc["parser"]](html, doc["args"])
 
 
 def test_there_is_a_fixture_to_walk():
