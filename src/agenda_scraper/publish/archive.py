@@ -56,7 +56,9 @@ def load(path: Path) -> dict[str, Event]:
     out: dict[str, Event] = {}
     if not path.exists():
         return out
-    for line in path.read_text(encoding="utf8").splitlines():
+    # Split on "\n" only: splitlines() also breaks on U+2028 and friends, which titles contain
+    # and json.dumps(ensure_ascii=False) writes raw.
+    for line in path.read_text(encoding="utf8").split("\n"):
         if line:
             row = json.loads(line)
             out[archive_key(row)] = _fold(out.get(archive_key(row)), row)
