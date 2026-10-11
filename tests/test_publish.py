@@ -218,6 +218,14 @@ def test_an_archived_event_survives_a_run_that_no_longer_scrapes_it(tmp_path):
     assert titles == {"Gone", "Kept"}
 
 
+def test_a_title_with_a_unicode_line_separator_survives_a_round_trip(tmp_path):
+    rows = merge({}, [_gig(title="Line\u2028Break")], "2026-09-01T10:00:00Z")
+    (tmp_path / ARCHIVE_FILE).write_text(dump(rows), encoding="utf8")
+    assert [r["title"] for r in load(tmp_path / ARCHIVE_FILE).values()] == [
+        "Line\u2028Break"
+    ]
+
+
 def test_a_later_sighting_updates_a_field_but_never_blanks_one():
     first = merge({}, [_gig(status="")], "2026-09-01T10:00:00Z")
     later = merge(first, [_gig(time="", status="Sold out")], "2026-09-02T10:00:00Z")
